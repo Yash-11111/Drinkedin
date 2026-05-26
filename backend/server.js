@@ -8,9 +8,17 @@ const { Server } = require("socket.io");
 
 const app    = express();
 const server = http.createServer(app);
-const io     = new Server(server, {
-  cors: { origin: "*", methods: ["GET", "POST", "PUT", "DELETE"] }
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8000";
+
+const io = new Server(server, {
+  cors: {
+    origin: [FRONTEND_URL, "http://localhost:8000"],
+    methods: ["GET", "POST", "PUT", "DELETE"]
+  }
 });
+app.use(cors({
+  origin: [FRONTEND_URL, "http://localhost:8000"]
+}));
 
 const PORT      = process.env.PORT      || 8000;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/drinkedin";
