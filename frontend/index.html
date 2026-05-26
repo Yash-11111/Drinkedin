@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DrinkedIn – Share the Pour</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap"
+    rel="stylesheet" />
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-icon">🍸</span>
+        <span class="logo-text">Drinked<em>In</em></span>
+      </a>
+      <div class="nav-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search drinks, bars, people…" />
+      </div>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link active" title="Feed">🏠<span>Feed</span></a>
+        <a href="messages.html" class="nav-link" title="Messages">
+          💬<span>Messages</span>
+        </a>
+        <a href="explore.html" class="nav-link" title="Explore">🌍<span>Explore</span></a>
+        <a href="#" class="nav-link" title="Network">🍻<span>Network</span></a>
+        <!-- <a href="#" class="nav-link notif" title="Alerts">🔔<span class="badge">3</span><span>Alerts</span></a> -->
+        <a href="notifications.html" class="nav-link" title="Notifications">
+  🔔<span id="notifBadge" class="badge" style="display:none">0</span>
+  <span>Alerts</span>
+</a>
+        <a href="profile.html" class="nav-link" title="Profile">
+          <img src="https://i.pravatar.cc/36?img=12" class="nav-avatar" alt="Profile" />
+          
+        </a>
+        <a href="recommend.html" class="nav-link" title="AI">🤖<span>AI</span></a>
+        <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle" title="Toggle theme">🌙</button>
+        <button class="btn-outline" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero-banner" id="heroBanner">
+    <div class="hero-content">
+      <p class="hero-eyebrow">Welcome back, <span id="sidebarUsername">friend</span> 👋</p>
+      <h1>Every Sip<br />Has a Story.</h1>
+      <p class="hero-sub">The world's most spirited professional network.</p>
+      <button class="btn-primary" onclick="closeHero()">Start Pouring →</button>
+    </div>
+    <div class="hero-bottles">
+      <span class="bottle b1">🍾</span>
+      <span class="bottle b2">🥃</span>
+      <span class="bottle b3">🍹</span>
+      <span class="bottle b4">🍺</span>
+      <span class="bottle b5">🍷</span>
+    </div>
+  </div>
+
+  <!-- MAIN LAYOUT -->
+  <main class="layout">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar-left">
+      <div class="profile-card">
+        <div class="profile-banner-mini">
+          <div class="banner-pattern"></div>
+        </div>
+        <img src="https://i.pravatar.cc/80?img=12" class="profile-avatar-lg sidebar-avatar" alt="You" />
+        <div class="profile-card-body">
+          <h3 id="sidebarUsernameCard">Loading…</h3>
+          <p class="profile-tagline">🥃 Whiskey Aficionado · Cocktail Crafter</p>
+          <div class="profile-stats-big">
+            <div class="big-stat"><strong id="totalPosts">0</strong><span>Pours</span></div>
+            <div class="big-stat clickable" onclick="openFollowModal('followers')">
+              <strong id="followerCount">0</strong><span>Followers</span>
+            </div>
+            <div class="big-stat clickable" onclick="openFollowModal('following')">
+              <strong id="followingCount">0</strong><span>Following</span>
+            </div>
+            <div class="big-stat"><strong>4.8★</strong><span>Avg Rating</span></div>
+          </div>
+          <div class="profile-tags">
+            <span class="tag">Scotch</span>
+            <span class="tag">IPA</span>
+            <span class="tag">Natural Wine</span>
+            <span class="tag">Mezcal</span>
+          </div>
+          <a href="profile.html" class="btn-outline full-width">View Profile</a>
+        </div>
+      </div>
+
+      <div class="sidebar-widget">
+        <h4 class="widget-title">📍 Trending Bars Near You</h4>
+        <ul class="bar-list">
+          <li><span class="bar-emoji">🏮</span>
+            <div><strong>The Copper Still</strong><small>Mathura, UP</small></div><span class="bar-rating">4.8 ⭐</span>
+          </li>
+          <li><span class="bar-emoji">🎷</span>
+            <div><strong>Jazz &amp; Gin</strong><small>Agra, UP</small></div><span class="bar-rating">4.6 ⭐</span>
+          </li>
+          <li><span class="bar-emoji">🌙</span>
+            <div><strong>Midnight Negroni</strong><small>Delhi NCR</small></div><span class="bar-rating">4.9 ⭐</span>
+          </li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- FEED -->
+    <section class="feed">
+
+      <!-- CREATE POST -->
+      <div class="create-post-card">
+        <div class="create-row">
+          <img src="https://i.pravatar.cc/44?img=12" class="create-avatar sidebar-avatar" alt="me" />
+          <textarea id="postInput" placeholder="What are you drinking tonight? 🥂" rows="3"></textarea>
+        </div>
+        <div id="imagePreview"></div>
+        <div class="create-footer">
+          <div class="drink-btns">
+            <button class="drink-tag-btn" onclick="addEmoji('🍹')">🍹 Cocktail</button>
+            <button class="drink-tag-btn" onclick="addEmoji('🍺')">🍺 Beer</button>
+            <button class="drink-tag-btn" onclick="addEmoji('🥃')">🥃 Whiskey</button>
+            <button class="drink-tag-btn" onclick="addEmoji('🍷')">🍷 Wine</button>
+            <button class="drink-tag-btn" onclick="addEmoji('🍾')">🍾 Bubbly</button>
+            <label class="drink-tag-btn upload-label" title="Attach a photo">
+              📸 Photo
+              <input type="file" id="postImageInput" accept="image/*" style="display:none"
+                onchange="openImageModal(this)" />
+            </label>
+          </div>
+          <div class="create-actions-row">
+            <div class="rating-row">
+              <span class="rating-label">Rate it:</span>
+              <div class="star-picker" id="ratingStars">
+                <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span>
+                <span onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span>
+                <span onclick="setRating(5)">★</span>
+              </div>
+            </div>
+            <button class="btn-primary" id="pourBtn" onclick="createPost()">Pour It 🍸</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- IMAGE CAPTION MODAL -->
+      <div class="modal-overlay" id="imageModal">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h3>📸 Add Photo</h3>
+            <button class="modal-close" onclick="closeImageModal()">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="modal-preview-wrap">
+              <img id="modalPreviewImg" src="" alt="preview" />
+            </div>
+            <div class="modal-fields">
+              <label class="modal-label">Caption</label>
+              <textarea id="modalCaption" placeholder="Describe this pour… what does it taste like? 🥃"
+                rows="3"></textarea>
+              <label class="modal-label">Tags</label>
+              <div class="tag-input-wrap">
+                <input type="text" id="tagInput" placeholder="Add a tag (e.g. Scotch) and press Enter" />
+                <div id="tagsList" class="tags-list"></div>
+              </div>
+              <div class="popular-tags">
+                <span class="modal-label">Popular:</span>
+                <button onclick="addTag('Scotch')">Scotch</button>
+                <button onclick="addTag('IPA')">IPA</button>
+                <button onclick="addTag('Cocktail')">Cocktail</button>
+                <button onclick="addTag('NaturalWine')">Natural Wine</button>
+                <button onclick="addTag('Mezcal')">Mezcal</button>
+                <button onclick="addTag('HomeBar')">Home Bar</button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-outline" onclick="closeImageModal()">Cancel</button>
+            <button class="btn-primary" onclick="confirmImageModal()">Attach & Pour 🍸</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="postsContainer"></div>
+    </section>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside class="sidebar-right">
+      <div class="sidebar-widget">
+        <h4 class="widget-title">🔥 Trending Pours</h4>
+        <ul class="trending-list">
+          <li><span class="hashtag">#NegroniWeek</span><small>12.4k pours</small></li>
+          <li><span class="hashtag">#WildTurkeyTuesday</span><small>9.1k pours</small></li>
+          <li><span class="hashtag">#CraftBeerFriday</span><small>8.7k pours</small></li>
+          <li><span class="hashtag">#NaturalWine</span><small>7.2k pours</small></li>
+          <li><span class="hashtag">#MezcalMoments</span><small>6.8k pours</small></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-widget">
+        <h4 class="widget-title">👥 People You May Know</h4>
+        <ul class="suggest-list" id="suggestList">
+          <li><img src="https://i.pravatar.cc/40?img=5" alt="" />
+            <div><strong>Isla Rye</strong><small>Gin Sommelier</small></div><button class="btn-follow"
+              onclick="followUser(this)">+ Follow</button>
+          </li>
+          <li><img src="https://i.pravatar.cc/40?img=8" alt="" />
+            <div><strong>Marco Fizz</strong><small>Prosecco Expert</small></div><button class="btn-follow"
+              onclick="followUser(this)">+ Follow</button>
+          </li>
+          <li><img src="https://i.pravatar.cc/40?img=15" alt="" />
+            <div><strong>Nora Draught</strong><small>Craft Beer Reviewer</small></div><button class="btn-follow"
+              onclick="followUser(this)">+ Follow</button>
+          </li>
+          <li><img src="https://i.pravatar.cc/40?img=22" alt="" />
+            <div><strong>Dev Malts</strong><small>Scotch Collector</small></div><button class="btn-follow"
+              onclick="followUser(this)">+ Follow</button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-widget promo-widget">
+        <div class="promo-badge">✦ Premium</div>
+        <h4>Unlock <em>DrinkedIn Gold</em> 🏅</h4>
+        <p>Exclusive reviews, rare distillery access &amp; sommelier consultations.</p>
+        <button class="btn-gold">Try 1 Month Free</button>
+      </div>
+    </aside>
+  </main>
+  <!-- FOLLOWERS / FOLLOWING MODAL -->
+  <div class="modal-overlay" id="followModal">
+    <div class="modal-card" style="max-width:420px">
+      <div class="modal-header">
+        <h3 id="followModalTitle">Followers</h3>
+        <button class="modal-close" onclick="closeFollowModal()">✕</button>
+      </div>
+      <div class="modal-body" style="flex-direction:column; padding:16px; gap:12px;">
+        <div id="followModalList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT POST MODAL -->
+<div class="modal-overlay" id="editPostModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>✏️ Edit Pour</h3>
+      <button class="modal-close" onclick="closeEditPostModal()">✕</button>
+    </div>
+    <div class="modal-body" style="flex-direction:column; gap:16px; padding:20px;">
+
+      <!-- Current image preview -->
+      <div id="editCurrentImage"></div>
+
+      <div class="edit-field-group">
+        <label class="modal-label">Your Story</label>
+        <textarea id="editPostStory" rows="5" placeholder="What are you drinking…"></textarea>
+      </div>
+
+      <div class="edit-field-group">
+        <label class="modal-label">Tags</label>
+        <div class="tag-input-wrap">
+          <input type="text" id="editTagInput" placeholder="Add a tag and press Enter"/>
+          <div id="editTagsList" class="tags-list"></div>
+        </div>
+        <div class="popular-tags" style="margin-top:8px">
+          <span class="modal-label">Popular:</span>
+          <button onclick="addEditTag('Scotch')">Scotch</button>
+          <button onclick="addEditTag('IPA')">IPA</button>
+          <button onclick="addEditTag('Cocktail')">Cocktail</button>
+          <button onclick="addEditTag('NaturalWine')">Natural Wine</button>
+          <button onclick="addEditTag('Mezcal')">Mezcal</button>
+        </div>
+      </div>
+
+      <div class="edit-field-group">
+        <label class="modal-label">Replace Image (optional)</label>
+        <label class="edit-img-upload-label">
+          📸 Choose new photo
+          <input type="file" id="editPostImage" accept="image/*" style="display:none"
+                 onchange="handleEditImagePreview(this)"/>
+        </label>
+        <div id="editImagePreview"></div>
+      </div>
+
+      <!-- Remove existing image checkbox -->
+      <div class="edit-remove-img-row" id="editRemoveImgRow" style="display:none">
+        <label class="modal-label" style="flex-direction:row; align-items:center; gap:8px; cursor:pointer">
+          <input type="checkbox" id="removeImageCheck"/>
+          Remove current image
+        </label>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeEditPostModal()">Cancel</button>
+      <button class="btn-primary" id="saveEditBtn" onclick="saveEditedPost()">Save Changes ✅</button>
+    </div>
+  </div>
+</div>
+
+  <div class="toast" id="toast"></div>
+  <script src="js/app.js"></script>
+  <script>
+    // Sync sidebar username after app.js loads
+    document.addEventListener("DOMContentLoaded", () => {
+      const u = getCurrentUser && getCurrentUser();
+      const el = document.getElementById("sidebarUsernameCard");
+      if (el && u) el.innerText = u.username;
+      const el2 = document.getElementById("sidebarUsername");
+      if (el2 && u) el2.innerText = u.username;
+    });
+  </script>
+</body>
+
+</html>

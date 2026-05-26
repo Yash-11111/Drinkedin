@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DrinkedIn – Login</title>
+  <link rel="stylesheet" href="login.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="logo-icon">🍸</span>
+      <h1>Drinked<em>In</em></h1>
+    </div>
+    <p class="login-sub">Share your drinking stories</p>
+
+    <div class="form-group">
+      <input id="email" type="email" placeholder="Enter your email" autocomplete="email"/>
+      <button class="btn-primary send-otp-btn" onclick="sendOTP()">Send OTP</button>
+    </div>
+
+    <div class="form-group" id="otpSection" style="display:none">
+      <input id="otp" type="text" placeholder="Enter OTP from email" maxlength="6" inputmode="numeric"/>
+      <button class="btn-primary" onclick="verifyOTP()">Login →</button>
+    </div>
+
+    <p id="status" class="status-msg"></p>
+
+    <p class="login-footer">No password. Just your email + OTP. 🔒</p>
+  </div>
+
+  <div class="login-bottles">
+    <span>🍾</span><span>🥃</span><span>🍷</span><span>🍹</span><span>🍺</span>
+  </div>
+</div>
+<script src="auth.js"></script>
+</body>
+</html>

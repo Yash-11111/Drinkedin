@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Recommender – DrinkedIn</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="logo">
+      <span class="logo-icon">🍸</span>
+      <span class="logo-text">Drinked<em>In</em></span>
+    </a>
+    <div class="nav-search">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Search…"/>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link" title="Feed">🏠<span>Feed</span></a>
+      <a href="explore.html" class="nav-link" title="Explore">🌍<span>Explore</span></a>
+      <a href="recommend.html" class="nav-link active" title="AI">🤖<span>AI</span></a>
+      <a href="profile.html" class="nav-link" title="Profile">
+        <img src="https://i.pravatar.cc/36?img=12" class="nav-avatar" alt="Profile"/>
+      </a>
+      <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">🌙</button>
+      <button class="btn-outline nav-logout" onclick="logout()">Logout</button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="recommend-hero">
+  <div class="recommend-hero-content">
+    <div class="ai-badge">✦ Powered by Claude AI</div>
+    <h1>🤖 AI Pour<br/>Recommender</h1>
+    <p>Tell me what you like and I'll find your next perfect drink</p>
+  </div>
+</div>
+
+<div class="recommend-layout">
+
+  <!-- LEFT — INPUT -->
+  <div class="recommend-input-col">
+
+    <div class="sidebar-widget">
+      <h4 class="widget-title">🍹 What do you enjoy?</h4>
+      <div class="pref-grid">
+        <button class="pref-btn" onclick="togglePref(this)">🥃 Whiskey</button>
+        <button class="pref-btn" onclick="togglePref(this)">🍺 Beer</button>
+        <button class="pref-btn" onclick="togglePref(this)">🍷 Wine</button>
+        <button class="pref-btn" onclick="togglePref(this)">🍹 Cocktails</button>
+        <button class="pref-btn" onclick="togglePref(this)">🍾 Champagne</button>
+        <button class="pref-btn" onclick="togglePref(this)">🥂 Gin</button>
+        <button class="pref-btn" onclick="togglePref(this)">🌵 Mezcal</button>
+        <button class="pref-btn" onclick="togglePref(this)">🍶 Sake</button>
+        <button class="pref-btn" onclick="togglePref(this)">🥛 Creamy</button>
+        <button class="pref-btn" onclick="togglePref(this)">🌶️ Spicy</button>
+        <button class="pref-btn" onclick="togglePref(this)">🍋 Citrusy</button>
+        <button class="pref-btn" onclick="togglePref(this)">🍫 Sweet</button>
+      </div>
+    </div>
+
+    <div class="sidebar-widget">
+      <h4 class="widget-title">🎯 Occasion</h4>
+      <div class="pref-grid">
+        <button class="pref-btn occasion" onclick="selectOccasion(this)">🏠 Home alone</button>
+        <button class="pref-btn occasion" onclick="selectOccasion(this)">👥 Party</button>
+        <button class="pref-btn occasion" onclick="selectOccasion(this)">🍽️ Dinner</button>
+        <button class="pref-btn occasion" onclick="selectOccasion(this)">🌅 Sundowner</button>
+        <button class="pref-btn occasion" onclick="selectOccasion(this)">🎉 Celebration</button>
+        <button class="pref-btn occasion" onclick="selectOccasion(this)">😌 Relaxing</button>
+      </div>
+    </div>
+
+    <div class="sidebar-widget">
+      <h4 class="widget-title">💬 Tell me more (optional)</h4>
+      <textarea id="extraContext" rows="3"
+        placeholder="e.g. I prefer smoky flavors, I'm on a budget, I want something local…"
+        style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-size:14px;outline:none;resize:none;font-family:'DM Sans',sans-serif"></textarea>
+    </div>
+
+    <button class="btn-primary recommend-btn" id="recommendBtn" onclick="getRecommendations()">
+      ✨ Get My Recommendations
+    </button>
+  </div>
+
+  <!-- RIGHT — RESULTS -->
+  <div class="recommend-results-col">
+
+    <!-- EMPTY STATE -->
+    <div class="recommend-empty" id="recommendEmpty">
+      <span>🍸</span>
+      <h3>Your recommendations will appear here</h3>
+      <p>Select your preferences and hit the button</p>
+    </div>
+
+    <!-- LOADING -->
+    <div class="recommend-loading" id="recommendLoading" style="display:none">
+      <div class="ai-thinking">
+        <span class="ai-dot"></span>
+        <span class="ai-dot"></span>
+        <span class="ai-dot"></span>
+      </div>
+      <p>We are Pouring your Perfect Pours…</p>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="recommendResults" style="display:none">
+      <div class="recommend-results-header">
+        <h3>✨ Your Perfect Pours</h3>
+        <button class="btn-outline" onclick="resetRecommendations()">🔄 Try Again</button>
+      </div>
+      <div id="recommendCards"></div>
+
+      <!-- CHAT FOLLOWUP -->
+      <div class="recommend-chat">
+        <h4 class="widget-title" style="margin-bottom:12px">💬 Ask a follow-up</h4>
+        <div id="chatHistory" class="recommend-chat-history"></div>
+        <div class="recommend-chat-input">
+          <input type="text" id="followUpInput"
+                 placeholder="e.g. Which one pairs well with steak? Any non-alcoholic options?"
+                 onkeydown="if(event.key==='Enter') askFollowUp()"/>
+          <button class="chat-send-btn" onclick="askFollowUp()">↑</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="js/recommend.js"></script>
+</body>
+</html>

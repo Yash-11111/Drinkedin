@@ -1,0 +1,26 @@
+{
+  "name": "drinkedin-backend",
+  "version": "1.0.0",
+  "description": "DrinkedIn backend API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cloudinary": "^1.41.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.21.0",
+    "mongoose": "^8.9.5",
+    "multer": "^2.1.1",
+    "multer-storage-cloudinary": "^4.0.0",
+    "nodemailer": "^8.0.8",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

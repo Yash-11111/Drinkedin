@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Explore – DrinkedIn</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="logo">
+      <span class="logo-icon">🍸</span>
+      <span class="logo-text">Drinked<em>In</em></span>
+    </a>
+    <div class="nav-search">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="globalSearch" placeholder="Search posts, users, tags…"
+             oninput="handleSearch(this.value)"/>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link" title="Feed">🏠<span>Feed</span></a>
+      <a href="explore.html" class="nav-link active" title="Explore">🌍<span>Explore</span></a>
+      <a href="messages.html" class="nav-link" title="Messages">💬<span>Messages</span></a>
+      <a href="profile.html" class="nav-link" title="Profile">
+        <img src="https://i.pravatar.cc/36?img=12" class="nav-avatar" alt="Profile"/>
+      </a>
+      <a href="notifications.html" class="nav-link" title="Notifications">
+  🔔<span id="notifBadge" class="badge" style="display:none">0</span>
+  <span>Alerts</span>
+</a>
+<a href="recommend.html" class="nav-link" title="AI">🤖<span>AI</span></a>
+      <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">🌙</button>
+      <button class="btn-outline nav-logout" onclick="logout()">Logout</button>
+    </div>
+  </div>
+</nav>
+
+<!-- EXPLORE HERO -->
+<div class="explore-hero">
+  <div class="explore-hero-content">
+    <h1>🌍 Explore</h1>
+    <p>Discover pours, people and places</p>
+    <div class="explore-search-bar">
+      <span>🔍</span>
+      <input type="text" id="exploreSearch" placeholder="Search anything… whiskey, IPA, negroni…"
+             oninput="handleSearch(this.value)"/>
+      <button class="btn-primary" onclick="handleSearch(document.getElementById('exploreSearch').value)">Search</button>
+    </div>
+  </div>
+</div>
+
+<div class="explore-layout">
+
+  <!-- LEFT — CATEGORIES + TRENDING TAGS -->
+  <aside class="explore-sidebar">
+
+    <div class="sidebar-widget">
+      <h4 class="widget-title">🍹 Browse by Drink</h4>
+      <div class="category-list">
+        <button class="category-btn active" onclick="filterCategory('all', this)">
+          🍸 <span>All Pours</span>
+        </button>
+        <button class="category-btn" onclick="filterCategory('whiskey', this)">
+          🥃 <span>Whiskey</span>
+        </button>
+        <button class="category-btn" onclick="filterCategory('beer', this)">
+          🍺 <span>Beer & IPA</span>
+        </button>
+        <button class="category-btn" onclick="filterCategory('wine', this)">
+          🍷 <span>Wine</span>
+        </button>
+        <button class="category-btn" onclick="filterCategory('cocktail', this)">
+          🍹 <span>Cocktails</span>
+        </button>
+        <button class="category-btn" onclick="filterCategory('bubbly', this)">
+          🍾 <span>Bubbly</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar-widget">
+      <h4 class="widget-title">🔥 Trending Tags</h4>
+      <div id="trendingTagsList">
+        <p style="color:var(--text-muted);font-size:13px">Loading…</p>
+      </div>
+    </div>
+
+    <div class="sidebar-widget">
+      <h4 class="widget-title">📊 Stats</h4>
+      <ul class="explore-stats">
+        <li><span id="totalPostsCount">–</span><small>Total Pours</small></li>
+        <li><span id="totalUsersCount">–</span><small>Drinkers</small></li>
+      </ul>
+    </div>
+
+  </aside>
+
+  <!-- RIGHT — POSTS GRID -->
+  <div class="explore-main">
+
+    <!-- ACTIVE FILTER BAR -->
+    <div class="filter-bar" id="filterBar">
+      <div class="filter-bar-left">
+        <span id="filterLabel">Showing: All Pours</span>
+        <button class="clear-filter-btn" id="clearFilterBtn"
+                onclick="clearFilter()" style="display:none">✕ Clear</button>
+      </div>
+      <div class="sort-btns">
+        <button class="sort-btn active" onclick="setSort('newest', this)">🕐 Newest</button>
+        <button class="sort-btn" onclick="setSort('popular', this)">🔥 Popular</button>
+      </div>
+    </div>
+
+    <!-- POSTS -->
+    <div id="explorePostsContainer" class="explore-posts-grid"></div>
+
+    <!-- LOAD MORE -->
+    <div class="load-more-wrap" id="loadMoreWrap" style="display:none">
+      <button class="btn-outline load-more-btn" onclick="loadMore()">Load More 🍸</button>
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" id="exploreEmpty" style="display:none">
+      <span class="empty-icon">🔍</span>
+      <h3>No pours found</h3>
+      <p>Try a different category or search term</p>
+      <button class="btn-primary" onclick="clearFilter()">Show All Pours</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="js/explore.js"></script>
+</body>
+</html>

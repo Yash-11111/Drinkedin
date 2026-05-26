@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Profile – DrinkedIn</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap"
+    rel="stylesheet" />
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-icon">🍸</span>
+        <span class="logo-text">Drinked<em>In</em></span>
+      </a>
+      <div class="nav-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search drinks, bars, people…" />
+      </div>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link" title="Feed">🏠<span>Feed</span></a>
+        <a href="messages.html" class="nav-link" title="Messages">
+          💬<span>Messages</span>
+        </a>
+        <a href="explore.html" class="nav-link" title="Explore">🌍<span>Explore</span></a>
+        <a href="#" class="nav-link" title="Network">🍻<span>Network</span></a>
+        <a href="notifications.html" class="nav-link" title="Notifications">
+  🔔<span id="notifBadge" class="badge" style="display:none">0</span>
+  <span>Alerts</span>
+</a>
+        <a href="profile.html" class="nav-link active" title="Profile">
+          <img src="https://i.pravatar.cc/36?img=12" class="nav-avatar" alt="Profile" />
+        </a>
+        <a href="recommend.html" class="nav-link" title="AI">🤖<span>AI</span></a>
+        <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle" title="Toggle theme">🌙</button>
+        <button class="btn-outline" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- PROFILE HERO -->
+  <div class="profile-hero">
+    <div class="profile-cover">
+      <div class="cover-pattern"></div>
+      <div class="cover-overlay-text">🥃 🍷 🍸 🍾 🍺 🥂 🍹 🥃 🍷 🍸 🍾 🍺 🥂 🍹</div>
+    </div>
+    <div class="profile-hero-body">
+      <div class="profile-hero-left">
+        <div class="profile-avatar-wrapper">
+          <img src="https://i.pravatar.cc/120?img=12" class="profile-avatar-xl" id="mainAvatar" alt="Profile" />
+          <button class="avatar-edit-btn" onclick="openAvatarModal()">📸 Change</button>
+          <div class="avatar-badge">✦</div>
+          <input type="file" id="avatarInput" accept="image/*" style="display:none"
+            onchange="handleAvatarUpload(this)" />
+        </div>
+        <div class="profile-hero-info">
+          <h1 class="profile-name" id="username">Loading…</h1>
+          <p class="profile-headline" id="profileHeadline">🥃 Whiskey Aficionado · Cocktail Crafter</p>
+          <p class="profile-meta">
+            <span id="profileLocation">📍 Mathura, Uttar Pradesh</span>
+            <span>·</span>
+            <span>Member since 2024</span>
+          </p>
+          <div class="profile-tags-hero">
+            <span class="tag">Scotch</span>
+            <span class="tag">Craft IPA</span>
+            <span class="tag">Natural Wine</span>
+            <span class="tag">Mezcal</span>
+            <span class="tag">Cocktails</span>
+          </div>
+        </div>
+      </div>
+      <div class="profile-hero-right">
+        <div class="profile-stats-big">
+          <div class="big-stat"><strong id="totalPosts">0</strong><span>Pours</span></div>
+          <div class="big-stat"><strong>1.4k</strong><span>Followers</span></div>
+          <div class="big-stat"><strong>389</strong><span>Following</span></div>
+          <div class="big-stat"><strong>4.8★</strong><span>Avg Rating</span></div>
+        </div>
+        <!-- FROM -->
+        <div class="profile-action-btns">
+          <button class="btn-primary" onclick="triggerAvatarUpload()">📸 Change Photo</button>
+          <button class="btn-outline" onclick="showToast('Link copied! 🔗')">Share Profile</button>
+        </div>
+
+        <!-- TO -->
+        <div class="profile-action-btns">
+          <button class="btn-primary" onclick="openEditModal()">✏️ Edit Profile</button>
+          <button class="btn-outline" onclick="triggerAvatarUpload()">📸 Change Photo</button>
+          <button class="btn-outline" onclick="showToast('Link copied! 🔗')">Share Profile</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE BODY -->
+  <div class="profile-layout">
+
+    <!-- LEFT COL -->
+    <div class="profile-left-col">
+      <div class="sidebar-widget">
+        <h4 class="widget-title">About</h4>
+        <p class="about-text" id="profileBio">Passionate about the craft behind every glass. Started with Scotch at 21,
+          now obsessed with natural wine, craft IPA, and building my home cocktail lab. Always chasing the perfect dram.
+        </p>
+        <ul class="about-list">
+          <li>🎓 Certified WSET Level 2</li>
+          <li>🏆 Won <em>Best Home Cocktail</em> – Agra Bar Fest 2023</li>
+          <li>📅 Member since January 2024</li>
+          <li>💼 Product Manager by day, cocktail nerd by night</li>
+        </ul>
+      </div>
+
+      <div class="sidebar-widget">
+        <h4 class="widget-title">🍾 Cellar Highlights</h4>
+        <ul class="cellar-list">
+          <li><span class="cellar-emoji">🥃</span>
+            <div><strong>Lagavulin 16yr</strong><small>Islay Single Malt</small></div><span
+              class="cellar-stars">★★★★★</span>
+          </li>
+          <li><span class="cellar-emoji">🍷</span>
+            <div><strong>Overnoy Chardonnay</strong><small>Jura, France</small></div><span
+              class="cellar-stars">★★★★★</span>
+          </li>
+          <li><span class="cellar-emoji">🍹</span>
+            <div><strong>Mango Tajín Margarita</strong><small>Original Recipe</small></div><span
+              class="cellar-stars">★★★★☆</span>
+          </li>
+          <li><span class="cellar-emoji">🍺</span>
+            <div><strong>Bira 91 White</strong><small>Craft Wheat Beer</small></div><span
+              class="cellar-stars">★★★★☆</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-widget">
+        <h4 class="widget-title">🏅 Badges Earned</h4>
+        <div class="badges-grid">
+          <div class="badge-item" title="First Pour">🍸<span>First Pour</span></div>
+          <div class="badge-item" title="10 Pours">🔟<span>10 Pours</span></div>
+          <div class="badge-item" title="100 Cheers">🥂<span>100 Cheers</span></div>
+          <div class="badge-item" title="Whiskey Week">🥃<span>Whiskey Week</span></div>
+          <div class="badge-item" title="Bar Explorer">🗺️<span>Explorer</span></div>
+          <div class="badge-item" title="Top Reviewer">⭐<span>Top Reviewer</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COL / POSTS -->
+    <div class="profile-right-col">
+      <div class="profile-tabs">
+        <button class="profile-tab active" onclick="switchTab('pours', this)">🍸 My Pours</button>
+        <button class="profile-tab" onclick="switchTab('saved', this)">🔖 Saved</button>
+      </div>
+
+      <div id="tab-pours" class="tab-content active">
+        <div id="myPosts"></div>
+      </div>
+
+      <div id="tab-saved" class="tab-content">
+        <div class="empty-state">
+          <span class="empty-icon">🔖</span>
+          <h3>No saved pours yet</h3>
+          <p>Bookmark posts from your feed to revisit them later.</p>
+          <a href="index.html" class="btn-primary">Browse Feed</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- EDIT PROFILE MODAL -->
+  <div class="modal-overlay" id="editProfileModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>✏️ Edit Profile</h3>
+        <button class="modal-close" onclick="closeEditModal()">✕</button>
+      </div>
+      <div class="modal-body" style="flex-direction:column; gap:16px;">
+
+        <!-- Avatar change inside modal -->
+        <div class="edit-avatar-row">
+          <div class="edit-avatar-wrap">
+            <img id="editAvatarPreview" src="https://i.pravatar.cc/80?img=12" alt="avatar" />
+            <button class="avatar-edit-btn" onclick="triggerAvatarUpload()"
+              style="opacity:1; position:relative; bottom:auto; left:auto; transform:none; margin-top:8px;">📸 Change
+              Photo</button>
+          </div>
+          <div class="edit-avatar-info">
+            <p>JPG, PNG or WebP</p>
+            <p>Max size: 3MB</p>
+            <p>Recommended: square image</p>
+          </div>
+        </div>
+
+        <div class="edit-field-group">
+          <label class="modal-label">Username</label>
+          <input type="text" id="editUsername" placeholder="Your username" />
+        </div>
+
+        <div class="edit-field-group">
+          <label class="modal-label">Headline</label>
+          <input type="text" id="editHeadline" placeholder="e.g. 🥃 Whiskey Aficionado · Cocktail Crafter" />
+        </div>
+
+        <div class="edit-field-group">
+          <label class="modal-label">Location</label>
+          <input type="text" id="editLocation" placeholder="e.g. Mathura, Uttar Pradesh" />
+        </div>
+
+        <div class="edit-field-group">
+          <label class="modal-label">Bio</label>
+          <textarea id="editBio" rows="4" placeholder="Tell the world about your drinking journey…"></textarea>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="closeEditModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveProfile()">Save Changes ✅</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(name, btn) {
+      document.querySelectorAll(".profile-tab").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      btn.classList.add("active");
+      const el = document.getElementById("tab-" + name);
+      if (el) el.classList.add("active");
+
+      if(name === "saved") {
+        loadSavedPosts();
+      }
+    }
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      if (!t) return;
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(t._tid);
+      t._tid = setTimeout(() => t.classList.remove("show"), 2600);
+    }
+    window.addEventListener("scroll", () => {
+      const nav = document.getElementById("navbar");
+      if (nav) nav.style.boxShadow = window.scrollY > 8 ? "0 4px 28px rgba(0,0,0,0.55)" : "none";
+    }, { passive: true });
+  </script>
+  <!-- AVATAR PICKER MODAL -->
+<div class="modal-overlay" id="avatarPickerModal">
+  <div class="modal-card" style="max-width:480px">
+    <div class="modal-header">
+      <h3>🖼️ Choose Your Avatar</h3>
+      <button class="modal-close" onclick="closeAvatarModal()">✕</button>
+    </div>
+    <div class="modal-body" style="flex-direction:column; gap:24px; padding:24px;">
+
+      <!-- DEFAULT AVATARS -->
+      <div>
+        <label class="modal-label" style="margin-bottom:12px;display:block">Choose a default avatar</label>
+        <div class="avatar-picker-grid">
+
+          <div class="avatar-option" onclick="selectDefaultAvatar('male', this)">
+            <img src="https://i.pinimg.com/736x/8e/40/f8/8e40f83a0f6b6f2e66803af56507b05d.jpg" alt="Male"/>
+            <span>Male</span>
+          </div>
+
+          <div class="avatar-option" onclick="selectDefaultAvatar('female', this)">
+            <img src="https://i.pinimg.com/736x/72/4b/a5/724ba58551a3e4c577110ab10395508d.jpg" alt="Female"/>
+            <span>Female</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- DIVIDER -->
+      <div class="avatar-divider"><span>or upload your own</span></div>
+
+      <!-- UPLOAD CUSTOM -->
+      <div>
+        <label class="modal-label" style="margin-bottom:10px;display:block">Upload a custom photo</label>
+        <label class="edit-img-upload-label" style="width:100%;justify-content:center">
+          📸 Choose from device
+          <input type="file" id="avatarModalInput" accept="image/*" style="display:none"
+                 onchange="handleAvatarUploadFromModal(this)"/>
+        </label>
+        <div id="avatarUploadPreview" style="margin-top:10px"></div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeAvatarModal()">Cancel</button>
+      <button class="btn-primary" id="saveAvatarBtn" onclick="saveSelectedAvatar()">Save Avatar ✅</button>
+    </div>
+  </div>
+</div>
+  <div class="toast" id="toast"></div>
+  <script src="profile.js"></script>
+</body>
+
+</html>
