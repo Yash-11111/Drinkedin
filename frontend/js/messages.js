@@ -1,5 +1,5 @@
-const API_MSG   = "http://localhost:8000/api/messages";
-const API_USERS = "http://localhost:8000/api/users";
+const API_MSG   = `${BASE_URL}/api/messages`;
+const API_USERS = `${BASE_URL}/api/users`;
 
 if (!localStorage.getItem("token")) window.location.href = "login.html";
 
@@ -68,7 +68,7 @@ function initSocket() {
   const me = getCurrentUser();
   if (!me) return;
 
-  socket = io("http://localhost:8000");
+  socket = io(BASE_URL);
 
   socket.on("connect", () => {
     console.log("🔌 Socket connected");

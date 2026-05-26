@@ -3,8 +3,8 @@ if (!localStorage.getItem("token")) {
   window.location.href = "login.html";
 }
 
-const API_URL = "http://localhost:8000/api/posts";
-const API_USERS = "http://localhost:8000/api/users";
+const API_POSTS = `${BASE_URL}/api/posts`;
+const API_USERS = `${BASE_URL}/api/users`;
 
 // ===== HELPERS =====
 function getToken() { return localStorage.getItem("token"); }
@@ -670,7 +670,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ── SOCKET for feed notifications ──
   const me = getCurrentUser();
   if (me) {
-    const feedSocket = io("http://localhost:8000");
+    const feedSocket = io(BASE_URL);
     feedSocket.emit("user_online", me.userId);
 
     feedSocket.on("cheer_notification", ({ receiverId, senderUsername }) => {

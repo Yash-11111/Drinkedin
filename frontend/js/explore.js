@@ -1,5 +1,5 @@
-const API_POSTS = "http://localhost:8000/api/posts";
-const API_USERS = "http://localhost:8000/api/users";
+const API_POSTS = `${BASE_URL}/api/posts`;
+const API_USERS = `${BASE_URL}/api/users`;
 
 if (!localStorage.getItem("token")) window.location.href = "login.html";
 

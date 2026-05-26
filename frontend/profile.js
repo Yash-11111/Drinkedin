@@ -1,6 +1,6 @@
-const API_URL = "http://localhost:8000/api/posts";
-const API_POSTS = "http://localhost:8000/api/posts";
-const API_USERS = "http://localhost:8000/api/users";
+const API_URL   = `${BASE_URL}/api/posts`;
+const API_POSTS = `${BASE_URL}/api/posts`;
+const API_USERS = `${BASE_URL}/api/users`;
 
 if (!localStorage.getItem("token")) window.location.href = "login.html";
 
@@ -392,7 +392,7 @@ async function saveProfile() {
   if (!username) { showToast("Username can't be empty"); return; }
 
   try {
-    const res = await fetch("http://localhost:8000/api/users/update-profile", {
+    const res = await fetch(`${BASE_URL}/api/users/update-profile`, {
       method: "PUT",
       headers: {
         "Authorization": "Bearer " + getToken(),

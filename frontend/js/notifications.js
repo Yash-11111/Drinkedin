@@ -1,4 +1,4 @@
-const API_NOTIF = "http://localhost:8000/api/notifications";
+const API_NOTIF = `${BASE_URL}/api/notifications`;
 
 if (!localStorage.getItem("token")) window.location.href = "login.html";
 
@@ -203,7 +203,7 @@ function initSocket() {
   const me     = getCurrentUser();
   if (!me) return;
 
-  const socket = io("http://localhost:8000");
+  const socket = io(BASE_URL);
   socket.emit("user_online", me.userId);
 
   const events = ["cheer_notification", "follow_notification", "comment_notification", "message_notification"];
