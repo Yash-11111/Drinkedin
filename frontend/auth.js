@@ -1,5 +1,4 @@
-const AUTH_URL = "http://localhost:8000/api/auth";
-
+const AUTH_URL = `${BASE_URL}/api/auth`;
 // Redirect if already logged in
 if (localStorage.getItem("token")) {
   window.location.href = "index.html";
