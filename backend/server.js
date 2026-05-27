@@ -12,13 +12,11 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8000";
 
 const io = new Server(server, {
   cors: {
-    origin: [FRONTEND_URL, "http://localhost:8000"],
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"]
   }
 });
-app.use(cors({
-  origin: [FRONTEND_URL, "http://localhost:8000"]
-}));
+app.use(cors());
 
 const PORT      = process.env.PORT      || 8000;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/drinkedin";
