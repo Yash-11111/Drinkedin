@@ -1,17 +1,10 @@
-const nodemailer = require("nodemailer");
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+const { Resend } = require("resend");
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ── OTP EMAIL ──
 async function sendOTPEmail(to, otp) {
-  await transporter.sendMail({
-    from:    `"DrinkedIn 🍸" <${process.env.EMAIL_USER}>`,
+  await resend.emails.send({
+    from:    "DrinkedIn <onboarding@resend.dev>",
     to,
     subject: "Your DrinkedIn OTP",
     html: `
@@ -29,49 +22,23 @@ async function sendOTPEmail(to, otp) {
 
 // ── FOLLOW NOTIFICATION EMAIL ──
 async function sendFollowEmail(to, followerUsername, followerAvatar) {
-  await transporter.sendMail({
-    from:    `"DrinkedIn 🍸" <${process.env.EMAIL_USER}>`,
+  await resend.emails.send({
+    from:    "DrinkedIn <onboarding@resend.dev>",
     to,
     subject: `🍻 ${followerUsername} started following you on DrinkedIn!`,
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:0;background:#1c1c1c;border-radius:14px;overflow:hidden">
-
-        <!-- Header -->
         <div style="background:#242424;padding:24px 28px;border-bottom:1px solid #484848">
           <h2 style="color:#fcfc62;margin:0;font-size:24px">🍸 DrinkedIn</h2>
         </div>
-
-        <!-- Body -->
         <div style="padding:28px">
-          <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-            <img src="${followerAvatar || `https://i.pravatar.cc/60?u=${encodeURIComponent(followerUsername)}`}"
-                 style="width:60px;height:60px;border-radius:50%;border:3px solid #fcfc62"
-                 alt="${followerUsername}"/>
-            <div>
-              <h3 style="color:#feffea;margin:0;font-size:18px">${followerUsername}</h3>
-              <p style="color:#a3a3a3;margin:4px 0 0;font-size:14px">started following you</p>
-            </div>
-          </div>
-
-          <p style="color:#c9c9c9;font-size:15px;line-height:1.6">
-            Someone new just joined your crew! 🥂<br/>
-            Check out their profile and follow them back.
-          </p>
-
-          <a href="http://localhost:8000"
+          <h3 style="color:#feffea;margin:0 0 8px;font-size:18px">${followerUsername} started following you</h3>
+          <p style="color:#c9c9c9;font-size:15px;line-height:1.6">Someone new just joined your crew! 🥂</p>
+          <a href="https://drinkedin-one.vercel.app"
              style="display:inline-block;margin-top:20px;padding:12px 28px;background:#fcfc62;color:#000;font-weight:700;font-size:15px;border-radius:8px;text-decoration:none">
             View DrinkedIn →
           </a>
         </div>
-
-        <!-- Footer -->
-        <div style="padding:16px 28px;border-top:1px solid #484848;background:#242424">
-          <p style="color:#a3a3a3;font-size:12px;margin:0">
-            You're receiving this because someone followed you on DrinkedIn.<br/>
-            © 2024 DrinkedIn
-          </p>
-        </div>
-
       </div>
     `
   });
