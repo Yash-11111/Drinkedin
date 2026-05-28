@@ -235,7 +235,7 @@ async function renderPosts(posts) {
 
       <div class="comment-section" id="comments-${post._id}">
         <div class="comment-input-row">
-          <img src="https://i.pravatar.cc/32?u=${encodeURIComponent(me ? me.username : 'guest')}" alt="me"/>
+          <img src="${window.currentUserAvatar || `https://i.pravatar.cc/32?u=${encodeURIComponent(me ? me.username : 'guest')}`}" alt="me"/>
           <input type="text" id="comment-input-${post._id}" placeholder="Add a comment…"
                  onkeydown="if(event.key==='Enter') addComment('${post._id}')"/>
           <button class="comment-send-btn" onclick="addComment('${post._id}')">↑</button>
