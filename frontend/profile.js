@@ -267,7 +267,7 @@ async function loadProfile() {
     const postsData = await postsRes.json();
     if (!postsRes.ok) return;
 
-    if (totalEl) totalEl.textContent = postsData.totalPosts + " Pours";
+    if (totalEl) totalEl.textContent = postsData.totalPosts ;
     renderMyPosts(postsData.posts || []);
 
   } catch (err) {
@@ -299,7 +299,7 @@ function renderMyPosts(posts) {
 
     el.innerHTML = `
       <div class="post-header">
-        <img src="https://i.pravatar.cc/46?img=12" class="post-avatar" alt="me"/>
+        <img src="${post.avatarUrl || `https://i.pravatar.cc/46?img=12`}" class="post-avatar" alt="me"/>
         <div class="post-meta">
           <strong>${escapeHtml(post.username)}</strong>
           <small>${timeAgo(post.createdAt)}</small>

@@ -170,14 +170,13 @@ async function renderPosts(posts) {
   </div>
 `).join("");
 
-    const ownerBtns = isOwner ? `
-  <button class="action-btn owner-btn" title="Edit"
-    onclick="openEditPostModal(
-      "${post._id}",
-      ${JSON.stringify(post.story)},
-      ${JSON.stringify(post.imageUrl || '')},
-      ${JSON.stringify(post.tags || [])}
-    )">✏️ Edit</button>
+   const ownerBtns = isOwner ? `
+  <button class="action-btn owner-btn edit-post-btn"
+    data-id="${post._id}"
+    data-story="${encodeURIComponent(post.story || '')}"
+    data-image="${encodeURIComponent(post.imageUrl || '')}"
+    data-tags="${encodeURIComponent(JSON.stringify(post.tags || []))}"
+    title="Edit">✏️ Edit</button>
   <button class="action-btn owner-btn del-btn" onclick="deletePost('${post._id}')" title="Delete">🗑️ Delete</button>
 ` : "";
 
@@ -346,7 +345,7 @@ async function addComment(id) {
       item.className = "comment-item";
       item.style.animation = "fadeInUp 0.3s ease";
       item.innerHTML = `
-        <img src="https://i.pravatar.cc/28?u=${encodeURIComponent(me ? me.username : 'me')}" alt="me"/>
+        <img src="${window.currentUserAvatar || `https://i.pravatar.cc/28?u=me`}" alt="me"/>
         <div class="comment-bubble">
           <strong>${escapeHtml(me ? me.username : "You")}</strong>
           <p>${escapeHtml(text)}</p>
@@ -588,53 +587,62 @@ function addEmoji(emoji) {
 // ── FOLLOW / UNFOLLOW ──
 async function followUser(btn, targetId) {
   try {
-    const res = await fetch(`${API_USERS}/follow/${targetId}`, {
-      method: "PUT",
+    const res  = await fetch(`${API_USERS}/follow/${targetId}`, {
+      method:  "PUT",
       headers: authHeaders()
     });
     const data = await res.json();
-
     if (!res.ok) { showToast(data.msg || "Error"); return; }
 
     const isFollowing = data.following;
-    btn.textContent = isFollowing ? "🍻 Following" : "+ Follow";
+    btn.textContent   = isFollowing ? "🍻 Following" : "+ Follow";
     btn.classList.toggle("following", isFollowing);
     showToast(isFollowing ? "Following! 🍻" : "Unfollowed");
+
+    // Update follower/following counts if on profile page
+    const followerEl  = document.getElementById("followerCount");
+    const followingEl = document.getElementById("followingCount");
+    if (followerEl)  followerEl.textContent  = data.followerCount;
+    if (followingEl) followingEl.textContent = data.followingCount;
   } catch {
     showToast("Could not reach server.");
   }
 }
-
 // ── LOAD USER SUGGESTIONS ──
 async function loadSuggestions() {
   try {
-    const res = await fetch(`${API_USERS}/all`, { headers: authHeaders() });
+    const res   = await fetch(`${API_USERS}/all`, { headers: authHeaders() });
     const users = await res.json();
     if (!res.ok) return;
 
-    const me = getCurrentUser();
+    // Get current user's following list
+    const meRes  = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
+    const meData = await meRes.json();
+    const myFollowing = meData.following || [];
 
     const list = document.getElementById("suggestList");
     if (!list) return;
 
     list.innerHTML = "";
 
-    // Show max 5 suggestions
     users.slice(0, 5).forEach(user => {
-      const isFollowing = false; // fresh load, can check via me's following list
-
+      const isFollowing = myFollowing.includes(user._id.toString());
       const li = document.createElement("li");
       li.innerHTML = `
-        <img src="${user.avatarUrl || `https://i.pravatar.cc/40?u=${encodeURIComponent(user.username)}`}"
-             alt="${escapeHtml(user.username)}"/>
-        <div>
-          <strong>${escapeHtml(user.username)}</strong>
-          <small>${escapeHtml(user.headline || "DrinkedIn Member")}</small>
-        </div>
-        <button class="btn-follow" onclick="followUser(this, '${user._id}')">
-          + Follow
-        </button>
-      `;
+  <img src="${user.avatarUrl || `https://i.pravatar.cc/40?u=${encodeURIComponent(user.username)}`}"
+       alt="${escapeHtml(user.username)}"/>
+  <div>
+    <strong>${escapeHtml(user.username)}</strong>
+    <small>${escapeHtml(user.headline || "DrinkedIn Member")}</small>
+  </div>
+  <div style="display:flex;gap:6px;flex-shrink:0">
+    <button class="btn-follow ${isFollowing ? 'following' : ''}"
+            onclick="followUser(this, '${user._id}')">
+      ${isFollowing ? '🍻 Following' : '+ Follow'}
+    </button>
+    <button class="btn-follow" onclick="window.location='messages.html?user=${user._id}&username=${encodeURIComponent(user.username)}'">💬</button>
+  </div>
+`;
       list.appendChild(li);
     });
   } catch (err) {
@@ -698,6 +706,18 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch { }
   }
+
+  document.addEventListener("click", e => {
+  const editBtn = e.target.closest(".edit-post-btn");
+  if (editBtn) {
+    openEditPostModal(
+      editBtn.dataset.id,
+      decodeURIComponent(editBtn.dataset.story),
+      decodeURIComponent(editBtn.dataset.image),
+      JSON.parse(decodeURIComponent(editBtn.dataset.tags))
+    );
+  }
+});
 });
 
 
