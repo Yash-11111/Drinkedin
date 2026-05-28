@@ -128,7 +128,7 @@ function closeHero() {
 // ===== LOAD POSTS =====
 async function loadPosts() {
   try {
-    const res = await fetch(API_URL);
+    const res = await fetch(API_POSTS);
     const data = await res.json();
     renderPosts(Array.isArray(data) ? data : []);
   } catch (err) {
@@ -276,7 +276,7 @@ async function createPost() {
     if (postTags.length) formData.append("tags", JSON.stringify(postTags));
     if (pendingImageFile) formData.append("image", pendingImageFile);
 
-    const res = await fetch("http://localhost:8000/api/posts", {
+    const res = await fetch(`${BASE_URL}/api/posts`, {
       method: "POST",
       headers: { "Authorization": "Bearer " + getToken() },
       body: formData
@@ -300,7 +300,7 @@ async function createPost() {
 // ===== UPVOTE =====
 async function upvotePost(id, btn) {
   try {
-    const res = await fetch(`${API_URL}/${id}/upvote`, {
+    const res = await fetch(`${API_POSTS}/${id}/upvote`, {
       method: "PUT",
       headers: authHeaders()
     });
@@ -327,7 +327,7 @@ async function addComment(id) {
   if (!text) return;
 
   try {
-    const res = await fetch(`${API_URL}/${id}/comment`, {
+    const res = await fetch(`${API_POSTS}/${id}/comment`, {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ text })
@@ -364,7 +364,7 @@ async function addComment(id) {
 async function deleteComment(postId, commentId, btn) {
   if (!confirm("Delete this comment?")) return;
   try {
-    const res = await fetch(`${API_URL}/${postId}/comment/${commentId}`, {
+    const res = await fetch(`${API_POSTS}/${postId}/comment/${commentId}`, {
       method: "DELETE",
       headers: authHeaders()
     });
@@ -388,7 +388,7 @@ async function deleteComment(postId, commentId, btn) {
 async function deletePost(id) {
   if (!confirm("Delete this post?")) return;
   try {
-    const res = await fetch(`${API_URL}/${id}`, {
+    const res = await fetch(`${API_POSTS}/${id}`, {
       method: "DELETE",
       headers: authHeaders()
     });
@@ -547,7 +547,7 @@ async function saveEditedPost() {
       formData.append("image", editNewImage);
     }
 
-    const res = await fetch(`${API_URL}/${editingPostId}`, {
+    const res = await fetch(`${API_POSTS}/${editingPostId}`, {
       method: "PUT",
       headers: { "Authorization": "Bearer " + getToken() },
       body: formData
@@ -688,7 +688,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Update notification badge
   async function updateNotifBadge() {
     try {
-      const res = await fetch("http://localhost:8000/api/notifications/unread-count",
+      const res = await fetch(`${BASE_URL}/api/notifications/unread-count`,
         { headers: authHeaders() });
       const data = await res.json();
       const badge = document.getElementById("notifBadge");

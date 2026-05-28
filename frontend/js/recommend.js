@@ -1,5 +1,5 @@
-const API_USERS  = "http://localhost:8000/api/users";
-const API_POSTS  = "http://localhost:8000/api/posts";
+const API_USERS  = `${BASE_URL}/api/users`;
+const API_POSTS  = `${BASE_URL}/api/posts`;
 
 
 if (!localStorage.getItem("token")) window.location.href = "login.html";
@@ -140,7 +140,7 @@ Respond with ONLY the JSON array, no other text.`;
 }
 
 async function callClaude(messages) {
-  const res = await fetch("http://localhost:8000/api/recommend", {
+  const res = await fetch(`${BASE_URL}/api/recommend`, {
     method:  "POST",
     headers: {
       ...authHeaders(),

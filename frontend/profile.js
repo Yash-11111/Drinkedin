@@ -29,7 +29,7 @@ async function handleAvatarUpload(input) {
     const formData = new FormData();
     formData.append("avatar", file);
 
-    const res = await fetch("http://localhost:8000/api/users/avatar", {
+    const res = await fetch(`${BASE_URL}/api/users/avatar`, {
       method: "PUT",
       headers: { "Authorization": "Bearer " + getToken() },
       body: formData

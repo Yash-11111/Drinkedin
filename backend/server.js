@@ -8,7 +8,7 @@ const { Server } = require("socket.io");
 
 const app    = express();
 const server = http.createServer(app);
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8000";
+const FRONTEND_URL = process.env.FRONTEND_URL ||;
 
 const io = new Server(server, {
   cors: {
