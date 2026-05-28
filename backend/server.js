@@ -103,12 +103,21 @@ io.on("connection", (socket) => {
 module.exports.io = io;
 
 // ── DB + SERVER ──
-mongoose.connect(MONGO_URI)
+mongoose.connect(MONGO_URI, {
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS:          45000,
+})
   .then(() => {
     console.log("✅ MongoDB connected");
     server.listen(PORT, () => {
       console.log(`🍸 DrinkedIn running → http://localhost:${PORT}`);
     });
+
+    // Keep Render free tier awake (pings every 14 mins)
+    setInterval(() => {
+  fetch(`${process.env.FRONTEND_URL ? `https://drinkedin-ez8u.onrender.com` : `http://localhost:${PORT}`}/api`)
+    .catch(() => {});
+}, 14 * 60 * 1000);
   })
   .catch(err => {
     console.error("❌ DB Error:", err.message);
