@@ -405,5 +405,18 @@ window.addEventListener("scroll", () => {
 document.addEventListener("DOMContentLoaded", () => {
   loadTheme();
   initSocket();
-  loadConversations();
+
+  // Check if redirected from feed with a chat target
+  const chatTarget = sessionStorage.getItem("chatTarget");
+  if (chatTarget) {
+    sessionStorage.removeItem("chatTarget");
+    const { userId, username, avatarUrl, headline } = JSON.parse(chatTarget);
+    loadConversations().then(() => {
+      openConversation(userId, username, avatarUrl, headline);
+    });
+  } else {
+    loadConversations();
+  }
+
+  setInterval(loadConversations, 10000);
 });

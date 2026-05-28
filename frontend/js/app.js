@@ -608,6 +608,16 @@ async function followUser(btn, targetId) {
     showToast("Could not reach server.");
   }
 }
+// ── START CHAT ──
+function startChat(userId, username, avatarUrl, headline) {
+  sessionStorage.setItem("chatTarget", JSON.stringify({
+    userId,
+    username:  decodeURIComponent(username),
+    avatarUrl: avatarUrl || null,
+    headline:  decodeURIComponent(headline || "")
+  }));
+  window.location.href = "messages.html";
+}
 // ── LOAD USER SUGGESTIONS ──
 async function loadSuggestions() {
   try {
@@ -629,18 +639,23 @@ async function loadSuggestions() {
       const isFollowing = myFollowing.includes(user._id.toString());
       const li = document.createElement("li");
       li.innerHTML = `
-  <img src="${user.avatarUrl || `https://i.pravatar.cc/40?u=${encodeURIComponent(user.username)}`}"
-       alt="${escapeHtml(user.username)}"/>
-  <div>
-    <strong>${escapeHtml(user.username)}</strong>
-    <small>${escapeHtml(user.headline || "DrinkedIn Member")}</small>
+  <div class="suggest-user-row">
+    <img src="${user.avatarUrl || `https://i.pravatar.cc/36?u=${encodeURIComponent(user.username)}`}"
+         alt="${escapeHtml(user.username)}"/>
+    <div class="suggest-info">
+      <strong>${escapeHtml(user.username)}</strong>
+      <small>${escapeHtml(user.headline || "DrinkedIn Member")}</small>
+    </div>
   </div>
-  <div style="display:flex;gap:6px;flex-shrink:0">
+  <div class="suggest-btns">
     <button class="btn-follow ${isFollowing ? 'following' : ''}"
             onclick="followUser(this, '${user._id}')">
       ${isFollowing ? '🍻 Following' : '+ Follow'}
     </button>
-    <button class="btn-follow" onclick="window.location='messages.html?user=${user._id}&username=${encodeURIComponent(user.username)}'">💬</button>
+    <button class="btn-follow"
+            onclick="startChat('${user._id}', '${encodeURIComponent(user.username)}', '${user.avatarUrl || ''}', '${encodeURIComponent(user.headline || '')}')">
+      💬 Message
+    </button>
   </div>
 `;
       list.appendChild(li);
