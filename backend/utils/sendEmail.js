@@ -8,7 +8,7 @@ async function sendOTPEmail(to, otp) {
       "api-key":      process.env.BREVO_API_KEY
     },
     body: JSON.stringify({
-      sender:     { name: "DrinkedIn 🍸", email: "noreply@drinkedin.com" },
+      sender:     { name: "DrinkedIn 🍸", email: process.env.BREVO_USER },
       to:         [{ email: to }],
       subject:    "Your DrinkedIn OTP",
       htmlContent: `
@@ -39,7 +39,7 @@ async function sendFollowEmail(to, followerUsername, followerAvatar) {
       "api-key":      process.env.BREVO_API_KEY
     },
     body: JSON.stringify({
-      sender:     { name: "DrinkedIn 🍸", email: "noreply@drinkedin.com" },
+      sender:     { name: "DrinkedIn 🍸", email: process.env.BREVO_USER },
       to:         [{ email: to }],
       subject:    `🍻 ${followerUsername} started following you on DrinkedIn!`,
       htmlContent: `
