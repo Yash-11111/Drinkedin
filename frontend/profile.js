@@ -275,11 +275,9 @@ async function loadProfile() {
     showToast("Could not load profile. Is the backend running?");
   }
 }
-
 function renderMyPosts(posts) {
   const container = document.getElementById("myPosts");
   if (!container) return;
-
   container.innerHTML = "";
 
   if (posts.length === 0) {
@@ -293,13 +291,32 @@ function renderMyPosts(posts) {
     return;
   }
 
-  posts.forEach(post => {
-    const el = document.createElement("div");
+  posts.forEach((post, i) => {
+    const el     = document.createElement("div");
     el.className = "post-card";
+    el.style.animationDelay = (i * 0.06) + "s";
+
+    // ── IMAGE ──
+    const imageHTML = post.imageUrl ? `
+      <div class="post-image-wrap">
+        <img src="${post.imageUrl}"
+             class="post-image"
+             alt="post image"
+             loading="lazy"
+             onerror="this.parentElement.style.display='none'"
+             onclick="openLightbox('${post.imageUrl}')"/>
+      </div>` : "";
+
+    // ── TAGS ──
+    const tagsHTML = (post.tags && post.tags.length) ? `
+      <div class="post-tags-row">
+        ${post.tags.map(t => `<span class="post-tag">#${escapeHtml(t)}</span>`).join("")}
+      </div>` : "";
 
     el.innerHTML = `
       <div class="post-header">
-        <img src="${post.avatarUrl || `https://i.pravatar.cc/46?img=12`}" class="post-avatar" alt="me"/>
+        <img src="${post.avatarUrl || `https://i.pravatar.cc/46?u=${encodeURIComponent(post.username)}`}"
+             class="post-avatar" alt="${escapeHtml(post.username)}"/>
         <div class="post-meta">
           <strong>${escapeHtml(post.username)}</strong>
           <small>${timeAgo(post.createdAt)}</small>
@@ -308,6 +325,8 @@ function renderMyPosts(posts) {
       <div class="post-body">
         <p>${escapeHtml(post.story)}</p>
       </div>
+      ${imageHTML}
+      ${tagsHTML}
       <div class="post-actions">
         <span class="action-btn">🥂 ${post.upvotes || 0} Cheers</span>
         <span class="action-btn">💬 ${(post.comments || []).length} Comments</span>
@@ -318,6 +337,31 @@ function renderMyPosts(posts) {
 
     container.appendChild(el);
   });
+}
+
+function openLightbox(url) {
+  let lb = document.getElementById("lightbox");
+  if (!lb) {
+    lb = document.createElement("div");
+    lb.id = "lightbox";
+    lb.className = "lightbox";
+    lb.innerHTML = `
+      <div class="lightbox-inner">
+        <button class="lb-close" onclick="closeLightbox()">✕</button>
+        <img id="lb-img" src="" alt=""/>
+      </div>`;
+    lb.addEventListener("click", e => { if (e.target === lb) closeLightbox(); });
+    document.body.appendChild(lb);
+  }
+  document.getElementById("lb-img").src = url;
+  lb.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeLightbox() {
+  const lb = document.getElementById("lightbox");
+  if (lb) lb.classList.remove("open");
+  document.body.style.overflow = "";
 }
 
 async function deleteMyPost(id) {
