@@ -83,6 +83,11 @@ function initSocket() {
     }
     loadConversations(); // refresh inbox
   });
+// message edited
+  socket.on("message_edited", ({ messageId, text }) => {
+  const textEl = document.getElementById("msg-text-" + messageId);
+  if (textEl) textEl.textContent = text;
+});
 
   // Message deleted
   socket.on("message_deleted", ({ messageId }) => {
@@ -271,12 +276,16 @@ function appendMessage(msg, scroll = true) {
   div.id        = "msg-" + msg._id;
 
   div.innerHTML = `
-    <div class="message-bubble ${isMine ? "bubble-mine" : "bubble-theirs"}">
-      <p>${escapeHtml(msg.text)}</p>
-      <small>${timeAgo(msg.createdAt)}</small>
-    </div>
-    ${isMine ? `<button class="del-msg-btn" onclick="deleteMessage('${msg._id}')">🗑️</button>` : ""}
-  `;
+  <div class="message-bubble ${isMine ? "bubble-mine" : "bubble-theirs"}">
+    <p id="msg-text-${msg._id}">${escapeHtml(msg.text)}</p>
+    <small>${timeAgo(msg.createdAt)}</small>
+  </div>
+  ${isMine ? `
+    <div class="msg-action-btns">
+      <button class="del-msg-btn" onclick="editMessage('${msg._id}')" title="Edit">✏️</button>
+      <button class="del-msg-btn" onclick="deleteMessage('${msg._id}')" title="Delete">🗑️</button>
+    </div>` : ""}
+`;
 
   container.appendChild(div);
   if (scroll) container.scrollTop = container.scrollHeight;
@@ -326,6 +335,32 @@ function handleTyping() {
   }, 1500);
 }
 
+// ── EDIT MESSAGE ──
+async function editMessage(id) {
+  const textEl  = document.getElementById("msg-text-" + id);
+  const oldText = textEl?.textContent || "";
+  const newText = prompt("Edit message:", oldText);
+
+  if (!newText || newText.trim() === oldText) return;
+
+  try {
+    const res = await fetch(`${API_MSG}/${id}`, {
+      method:  "PUT",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body:    JSON.stringify({ text: newText.trim() })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      if (textEl) textEl.textContent = newText.trim();
+      showToast("Message updated ✅");
+    } else {
+      showToast(data.msg || "Error");
+    }
+  } catch {
+    showToast("Could not reach server.");
+  }
+}
+
 // ── DELETE MESSAGE ──
 async function deleteMessage(id) {
   try {
@@ -339,6 +374,7 @@ async function deleteMessage(id) {
     showToast("Could not reach server.");
   }
 }
+
 
 // ── NEW MESSAGE MODAL ──
 function openNewMessageModal() {

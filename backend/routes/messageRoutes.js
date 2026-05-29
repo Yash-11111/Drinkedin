@@ -75,6 +75,8 @@ router.post("/send", auth, async (req, res) => {
     const receiver = await User.findById(receiverId);
     if (!receiver) return res.status(404).json({ msg: "User not found" });
 
+     const sender = await User.findById(req.user.userId).select("username avatarUrl");
+
     const message = new Message({
       senderId: req.user.userId,
       receiverId,
@@ -95,8 +97,7 @@ router.post("/send", auth, async (req, res) => {
     const io = req.io;
     const roomId = [req.user.userId, receiverId].sort().join("_");
 
-    // Get sender info for the event
-    const sender = await User.findById(req.user.userId).select("username avatarUrl");
+   
 
     io.to(roomId).emit("new_message", {
       ...message.toObject(),

@@ -1323,3 +1323,10 @@ body.light-mode .post-image:hover { transform: scale(1.015); }
   transition: border-color 0.2s;
 }
 .recommend-chat-input input:focus { border-color: var(--yellow); }
+
+
+.msg-action-btns {
+  display: flex; flex-direction: column; gap: 4px;
+  opacity: 0; transition: opacity 0.2s;
+}
+.message-bubble-wrap:hover .msg-action-btns { opacity: 1; }
