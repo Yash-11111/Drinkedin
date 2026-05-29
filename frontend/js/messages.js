@@ -288,7 +288,11 @@ function appendMessage(msg, scroll = true) {
 `;
 
   container.appendChild(div);
-  if (scroll) container.scrollTop = container.scrollHeight;
+   if (scroll) {
+    setTimeout(() => {
+      container.scrollTop = container.scrollHeight;
+    }, 50);
+  }
 }
 
 // ── SEND MESSAGE ──

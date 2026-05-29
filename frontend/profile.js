@@ -270,6 +270,11 @@ async function loadProfile() {
     if (totalEl) totalEl.textContent = postsData.totalPosts ;
     renderMyPosts(postsData.posts || []);
 
+    const followerEl  = document.getElementById("followerCount");
+const followingEl = document.getElementById("followingCount");
+if (followerEl)  followerEl.textContent  = user.followers?.length  || 0;
+if (followingEl) followingEl.textContent = user.following?.length  || 0;
+
   } catch (err) {
     console.error(err);
     showToast("Could not load profile. Is the backend running?");
@@ -533,6 +538,33 @@ async function openFollowModal(type) {
   } catch {
     list.innerHTML = "<p style='color:var(--text-muted)'>Could not load list.</p>";
   }
+}
+
+function shareProfile() {
+  const me  = getCurrentUser();
+  const url = `${window.location.origin}/profile.html?user=${me?.userId}`;
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      showToast("Profile link copied! 🔗");
+    }).catch(() => {
+      fallbackCopy(url);
+    });
+  } else {
+    fallbackCopy(url);
+  }
+}
+
+function fallbackCopy(text) {
+  const el = document.createElement("textarea");
+  el.value = text;
+  el.style.position = "fixed";
+  el.style.opacity  = "0";
+  document.body.appendChild(el);
+  el.select();
+  document.execCommand("copy");
+  document.body.removeChild(el);
+  showToast("Profile link copied! 🔗");
 }
 
 function closeFollowModal() {

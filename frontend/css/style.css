@@ -634,6 +634,7 @@ textarea, input { font-family: inherit; }
 .inbox-sidebar {
   background: var(--bg2); border-right: 1px solid var(--border);
   display: flex; flex-direction: column;
+  height: calc(100vh - 120px); overflow: hidden;
 }
 .inbox-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -687,6 +688,7 @@ textarea, input { font-family: inherit; }
 .chat-window {
   background: var(--bg); display: flex;
   flex-direction: column; position: relative;
+  height: calc(100vh - 120px); overflow: hidden;
 }
 .chat-empty-state {
   flex: 1; display: flex; flex-direction: column;
@@ -712,6 +714,7 @@ textarea, input { font-family: inherit; }
 .chat-messages {
   flex: 1; overflow-y: auto; padding: 20px;
   display: flex; flex-direction: column; gap: 10px;
+  scroll-behavior: smooth;
 }
 .no-messages { color: var(--text-muted); font-size: 13px; text-align: center; margin: auto; }
 
@@ -748,7 +751,7 @@ textarea, input { font-family: inherit; }
 
 /* Chat input */
 .chat-input-area {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; flex-direction: column; gap: 6px;
   padding: 14px 20px; border-top: 1px solid var(--border);
   background: var(--bg2); flex-shrink: 0;
 }
@@ -760,21 +763,43 @@ textarea, input { font-family: inherit; }
 }
 .chat-input-area input:focus { border-color: var(--yellow); }
 .chat-send-btn {
-  background: var(--yellow); border: none;
-  width: 42px; height: 42px; border-radius: 50%;
-  font-size: 18px; cursor: pointer; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
+  background: var(--yellow);
+  border: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background 0.2s;
 }
-.chat-send-btn:hover { background: var(--cream); }
+
+.chat-send-btn:hover {
+  background: var(--cream);
+}
 
 /* ── USER SEARCH IN MODAL ── */
-.user-search-results { display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow-y: auto; }
-.user-search-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px; border-radius: var(--radius-sm);
-  cursor: pointer; transition: background 0.18s;
+.user-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 300px;
+  overflow-y: auto;
 }
+
+.user-search-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
 .user-search-item:hover { background: var(--surface); }
 .user-search-item img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
 .user-search-item strong { font-size: 14px; display: block; }
