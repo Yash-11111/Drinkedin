@@ -237,47 +237,57 @@ async function saveSelectedAvatar() {
 
 async function loadProfile() {
   try {
-    const res = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
-    const user = await res.json();
-    if (!res.ok) return;
+    // Fetch user info and posts in parallel
+    const [userRes, postsRes] = await Promise.all([
+      fetch(`${API_USERS}/me`, { headers: authHeaders() }),
+      fetch(`${API_POSTS}/my-posts`, { headers: authHeaders() })
+    ]);
+
+    const user      = await userRes.json();
+    const postsData = await postsRes.json();
+
+    if (!userRes.ok || !postsRes.ok) return;
 
     // ── Update profile fields ──
-    const nameEl = document.getElementById("username");
+    const nameEl     = document.getElementById("username");
     const headlineEl = document.getElementById("profileHeadline");
     const locationEl = document.getElementById("profileLocation");
-    const bioEl = document.getElementById("profileBio");
+    const bioEl      = document.getElementById("profileBio");
+    const totalEl    = document.getElementById("totalPosts");
+    const followerEl = document.getElementById("followerCount");
+    const followingEl= document.getElementById("followingCount");
+    // After setting bioEl
+const aboutList = document.getElementById("aboutList");
+if (aboutList) {
+  aboutList.innerHTML = "";
+  if (user.location) {
+    aboutList.innerHTML += `<li>📍 ${escapeHtml(user.location)}</li>`;
+  }
+  if (user.headline) {
+    aboutList.innerHTML += `<li>💼 ${escapeHtml(user.headline)}</li>`;
+  }
+}
 
-    if (nameEl) nameEl.textContent = user.username || "Unknown";
-    if (headlineEl) headlineEl.textContent = user.headline || "🥃 Whiskey Aficionado · Cocktail Crafter";
-    if (locationEl) locationEl.textContent = user.location ? "📍 " + user.location : "📍 Mathura, Uttar Pradesh";
-    if (bioEl) bioEl.textContent = user.bio || "Passionate about the craft behind every glass.";
+    if (nameEl)      nameEl.textContent      = user.username     || "Unknown";
+    if (headlineEl)  headlineEl.textContent  = user.headline     || "";
+    if (locationEl)  locationEl.textContent  = user.location ? "📍 " + user.location : "";
+    if (bioEl)       bioEl.textContent       = user.bio          || "";
+    if (totalEl)     totalEl.textContent     = postsData.totalPosts || 0;
+    if (followerEl)  followerEl.textContent  = user.followers?.length  || 0;
+    if (followingEl) followingEl.textContent = user.following?.length  || 0;
 
-    // ── Update avatar if uploaded ──
+    // ── Update avatar ──
     if (user.avatarUrl) {
-      document.querySelectorAll(".profile-avatar-xl, .nav-avatar,.sidebar-avatar, #editAvatarPreview").forEach(img => {
-        img.src = user.avatarUrl;
-      });
+      document.querySelectorAll(".profile-avatar-xl, .nav-avatar, .sidebar-avatar, #editAvatarPreview, #mainAvatar")
+        .forEach(img => img.src = user.avatarUrl);
     }
 
-    // ── Update total pours count ──
-    const totalEl = document.getElementById("totalPosts");
-
-    // ── Fetch posts separately ──
-    const postsRes = await fetch(`${API_POSTS}/my-posts`, { headers: authHeaders() });
-    const postsData = await postsRes.json();
-    if (!postsRes.ok) return;
-
-    if (totalEl) totalEl.textContent = postsData.totalPosts ;
+    // ── Render posts ──
     renderMyPosts(postsData.posts || []);
-
-    const followerEl  = document.getElementById("followerCount");
-const followingEl = document.getElementById("followingCount");
-if (followerEl)  followerEl.textContent  = user.followers?.length  || 0;
-if (followingEl) followingEl.textContent = user.following?.length  || 0;
 
   } catch (err) {
     console.error(err);
-    showToast("Could not load profile. Is the backend running?");
+    showToast("Could not load profile.");
   }
 }
 function renderMyPosts(posts) {

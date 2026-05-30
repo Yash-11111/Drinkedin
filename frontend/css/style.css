@@ -751,36 +751,25 @@ textarea, input { font-family: inherit; }
 
 /* Chat input */
 .chat-input-area {
-  display: flex; flex-direction: column; gap: 6px;
+  display: flex; align-items: center; gap: 10px;
   padding: 14px 20px; border-top: 1px solid var(--border);
-  background: var(--bg2); flex-shrink: 0;
+  background: var(--bg2); flex-shrink: 0; width: 100%;
 }
 .chat-input-area input {
   flex: 1; background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius-pill); padding: 11px 18px;
   color: var(--text); font-size: 14px; outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s; min-width: 0;
 }
 .chat-input-area input:focus { border-color: var(--yellow); }
 .chat-send-btn {
-  background: var(--yellow);
-  border: none;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  font-size: 18px;
-  cursor: pointer;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: var(--yellow); border: none;
+  width: 42px; height: 42px; border-radius: 50%;
+  font-size: 18px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
   transition: background 0.2s;
 }
-
-.chat-send-btn:hover {
-  background: var(--cream);
-}
-
+.chat-send-btn:hover { background: var(--cream); }
 /* ── USER SEARCH IN MODAL ── */
 .user-search-results {
   display: flex;
@@ -1355,3 +1344,17 @@ body.light-mode .post-image:hover { transform: scale(1.015); }
   opacity: 0; transition: opacity 0.2s;
 }
 .message-bubble-wrap:hover .msg-action-btns { opacity: 1; }
+
+
+.widget-header {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 14px;
+}
+.widget-header .widget-title { margin-bottom: 0; }
+.widget-edit-btn {
+  background: none; border: 1px solid var(--border);
+  color: var(--text-muted); font-size: 12px;
+  padding: 4px 10px; border-radius: var(--radius-pill);
+  cursor: pointer; transition: all 0.2s;
+}
+.widget-edit-btn:hover { border-color: var(--yellow); color: var(--yellow); }

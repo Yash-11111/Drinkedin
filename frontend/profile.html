@@ -5,6 +5,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Profile – DrinkedIn</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍸</text></svg>" />
   <link rel="stylesheet" href="css/style.css" />
   <link
     href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap"
@@ -32,9 +34,9 @@
         <a href="explore.html" class="nav-link" title="Explore">🌍<span>Explore</span></a>
         <a href="#" class="nav-link" title="Network">🍻<span>Network</span></a>
         <a href="notifications.html" class="nav-link" title="Notifications">
-  🔔<span id="notifBadge" class="badge" style="display:none">0</span>
-  <span>Alerts</span>
-</a>
+          🔔<span id="notifBadge" class="badge" style="display:none">0</span>
+          <span>Alerts</span>
+        </a>
         <a href="profile.html" class="nav-link active" title="Profile">
           <img src="https://i.pravatar.cc/36?img=12" class="nav-avatar" alt="Profile" />
         </a>
@@ -87,14 +89,14 @@
         <!-- FROM -->
         <div class="profile-action-btns">
           <button class="btn-primary" onclick="triggerAvatarUpload()">📸 Change Photo</button>
-          <button class="btn-outline" onclick="shareProfile()">Share Profile</button>
+
         </div>
 
         <!-- TO -->
         <div class="profile-action-btns">
           <button class="btn-primary" onclick="openEditModal()">✏️ Edit Profile</button>
           <button class="btn-outline" onclick="triggerAvatarUpload()">📸 Change Photo</button>
-          <button class="btn-outline" onclick="showToast('Link copied! 🔗')">Share Profile</button>
+          <button class="btn-outline" onclick="shareProfile()">🔗 Share Profile</button>
         </div>
       </div>
     </div>
@@ -106,16 +108,12 @@
     <!-- LEFT COL -->
     <div class="profile-left-col">
       <div class="sidebar-widget">
-        <h4 class="widget-title">About</h4>
-        <p class="about-text" id="profileBio">Passionate about the craft behind every glass. Started with Scotch at 21,
-          now obsessed with natural wine, craft IPA, and building my home cocktail lab. Always chasing the perfect dram.
-        </p>
-        <ul class="about-list">
-          <li>🎓 Certified WSET Level 2</li>
-          <li>🏆 Won <em>Best Home Cocktail</em> – Agra Bar Fest 2023</li>
-          <li>📅 Member since January 2024</li>
-          <li>💼 Product Manager by day, cocktail nerd by night</li>
-        </ul>
+        <div class="widget-header">
+          <h4 class="widget-title">About</h4>
+          <button class="widget-edit-btn" onclick="openEditModal()">✏️ Edit</button>
+        </div>
+        <p class="about-text" id="profileBio"></p>
+        <ul class="about-list" id="aboutList"></ul>
       </div>
 
       <div class="sidebar-widget">
@@ -234,7 +232,7 @@
       const el = document.getElementById("tab-" + name);
       if (el) el.classList.add("active");
 
-      if(name === "saved") {
+      if (name === "saved") {
         loadSavedPosts();
       }
     }
@@ -252,53 +250,53 @@
     }, { passive: true });
   </script>
   <!-- AVATAR PICKER MODAL -->
-<div class="modal-overlay" id="avatarPickerModal">
-  <div class="modal-card" style="max-width:480px">
-    <div class="modal-header">
-      <h3>🖼️ Choose Your Avatar</h3>
-      <button class="modal-close" onclick="closeAvatarModal()">✕</button>
-    </div>
-    <div class="modal-body" style="flex-direction:column; gap:24px; padding:24px;">
+  <div class="modal-overlay" id="avatarPickerModal">
+    <div class="modal-card" style="max-width:480px">
+      <div class="modal-header">
+        <h3>🖼️ Choose Your Avatar</h3>
+        <button class="modal-close" onclick="closeAvatarModal()">✕</button>
+      </div>
+      <div class="modal-body" style="flex-direction:column; gap:24px; padding:24px;">
 
-      <!-- DEFAULT AVATARS -->
-      <div>
-        <label class="modal-label" style="margin-bottom:12px;display:block">Choose a default avatar</label>
-        <div class="avatar-picker-grid">
+        <!-- DEFAULT AVATARS -->
+        <div>
+          <label class="modal-label" style="margin-bottom:12px;display:block">Choose a default avatar</label>
+          <div class="avatar-picker-grid">
 
-          <div class="avatar-option" onclick="selectDefaultAvatar('male', this)">
-            <img src="https://i.pinimg.com/736x/8e/40/f8/8e40f83a0f6b6f2e66803af56507b05d.jpg" alt="Male"/>
-            <span>Male</span>
+            <div class="avatar-option" onclick="selectDefaultAvatar('male', this)">
+              <img src="https://i.pinimg.com/736x/8e/40/f8/8e40f83a0f6b6f2e66803af56507b05d.jpg" alt="Male" />
+              <span>Male</span>
+            </div>
+
+            <div class="avatar-option" onclick="selectDefaultAvatar('female', this)">
+              <img src="https://i.pinimg.com/736x/72/4b/a5/724ba58551a3e4c577110ab10395508d.jpg" alt="Female" />
+              <span>Female</span>
+            </div>
+
           </div>
-
-          <div class="avatar-option" onclick="selectDefaultAvatar('female', this)">
-            <img src="https://i.pinimg.com/736x/72/4b/a5/724ba58551a3e4c577110ab10395508d.jpg" alt="Female"/>
-            <span>Female</span>
-          </div>
-
         </div>
+
+        <!-- DIVIDER -->
+        <div class="avatar-divider"><span>or upload your own</span></div>
+
+        <!-- UPLOAD CUSTOM -->
+        <div>
+          <label class="modal-label" style="margin-bottom:10px;display:block">Upload a custom photo</label>
+          <label class="edit-img-upload-label" style="width:100%;justify-content:center">
+            📸 Choose from device
+            <input type="file" id="avatarModalInput" accept="image/*" style="display:none"
+              onchange="handleAvatarUploadFromModal(this)" />
+          </label>
+          <div id="avatarUploadPreview" style="margin-top:10px"></div>
+        </div>
+
       </div>
-
-      <!-- DIVIDER -->
-      <div class="avatar-divider"><span>or upload your own</span></div>
-
-      <!-- UPLOAD CUSTOM -->
-      <div>
-        <label class="modal-label" style="margin-bottom:10px;display:block">Upload a custom photo</label>
-        <label class="edit-img-upload-label" style="width:100%;justify-content:center">
-          📸 Choose from device
-          <input type="file" id="avatarModalInput" accept="image/*" style="display:none"
-                 onchange="handleAvatarUploadFromModal(this)"/>
-        </label>
-        <div id="avatarUploadPreview" style="margin-top:10px"></div>
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="closeAvatarModal()">Cancel</button>
+        <button class="btn-primary" id="saveAvatarBtn" onclick="saveSelectedAvatar()">Save Avatar ✅</button>
       </div>
-
-    </div>
-    <div class="modal-footer">
-      <button class="btn-outline" onclick="closeAvatarModal()">Cancel</button>
-      <button class="btn-primary" id="saveAvatarBtn" onclick="saveSelectedAvatar()">Save Avatar ✅</button>
     </div>
   </div>
-</div>
   <div class="toast" id="toast"></div>
   <script src="js/config.js"></script>
   <script src="profile.js"></script>
