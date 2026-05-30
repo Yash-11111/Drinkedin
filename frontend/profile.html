@@ -80,10 +80,15 @@
         </div>
       </div>
       <div class="profile-hero-right">
+        <!-- FROM -->
         <div class="profile-stats-big">
           <div class="big-stat"><strong id="totalPosts">0</strong><span>Pours</span></div>
-          <div class="big-stat"><strong>1.4k</strong><span>Followers</span></div>
-          <div class="big-stat"><strong>389</strong><span>Following</span></div>
+          <div class="big-stat clickable" onclick="openFollowModal('followers')">
+            <strong id="followerCount">0</strong><span>Followers</span>
+          </div>
+          <div class="big-stat clickable" onclick="openFollowModal('following')">
+            <strong id="followingCount">0</strong><span>Following</span>
+          </div>
           <div class="big-stat"><strong>4.8★</strong><span>Avg Rating</span></div>
         </div>
         <!-- FROM -->

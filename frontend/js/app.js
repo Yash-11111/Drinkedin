@@ -90,26 +90,38 @@ function showCurrentUser() {
 
 async function loadNavUser() {
   try {
-    const res = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
+    const res  = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
     const user = await res.json();
     if (!res.ok) return;
 
-    // Store globally
     window.currentUserAvatar = user.avatarUrl || null;
 
-    // Update all username elements
+    // Update usernames
     document.querySelectorAll(".current-username").forEach(el => {
       el.textContent = user.username;
     });
 
-    // Update ALL avatar images on the page
+    // Update avatars
     if (user.avatarUrl) {
-      document.querySelectorAll(
-        ".nav-avatar, .create-avatar, .sidebar-avatar, .profile-avatar-lg"
-      ).forEach(img => {
-        img.src = user.avatarUrl;
-      });
+      document.querySelectorAll(".nav-avatar, .create-avatar, .sidebar-avatar, .profile-avatar-lg")
+        .forEach(img => img.src = user.avatarUrl);
     }
+
+    // Update sidebar stats
+    const pourEl      = document.getElementById("sidebarPours");
+    const followerEl  = document.getElementById("sidebarFollowers");
+    const followingEl = document.getElementById("sidebarFollowing");
+
+    if (followerEl)  followerEl.textContent  = user.followers?.length  || 0;
+    if (followingEl) followingEl.textContent = user.following?.length  || 0;
+
+    // Fetch post count separately
+    try {
+      const postsRes  = await fetch(`${API_POSTS}/my-posts`, { headers: authHeaders() });
+      const postsData = await postsRes.json();
+      if (pourEl) pourEl.textContent = postsData.totalPosts || 0;
+    } catch {}
+
   } catch (err) {
     console.error("loadNavUser error:", err);
   }
@@ -599,11 +611,16 @@ async function followUser(btn, targetId) {
     btn.classList.toggle("following", isFollowing);
     showToast(isFollowing ? "Following! 🍻" : "Unfollowed");
 
-    // Update follower/following counts if on profile page
-    const followerEl  = document.getElementById("followerCount");
-    const followingEl = document.getElementById("followingCount");
-    if (followerEl)  followerEl.textContent  = data.followerCount;
+    // Update sidebar following count
+    const followingEl = document.getElementById("sidebarFollowing");
     if (followingEl) followingEl.textContent = data.followingCount;
+
+    // Update profile page counts if visible
+    const profileFollowerEl  = document.getElementById("followerCount");
+    const profileFollowingEl = document.getElementById("followingCount");
+    if (profileFollowerEl)  profileFollowerEl.textContent  = data.followerCount;
+    if (profileFollowingEl) profileFollowingEl.textContent = data.followingCount;
+
   } catch {
     showToast("Could not reach server.");
   }
