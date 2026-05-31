@@ -1,9 +1,9 @@
-const API_MSG   = `${BASE_URL}/api/messages`;
+const API_MSG = `${BASE_URL}/api/messages`;
 const API_USERS = `${BASE_URL}/api/users`;
 
 if (!localStorage.getItem("token")) window.location.href = "login.html";
 
-function getToken()    { return localStorage.getItem("token"); }
+function getToken() { return localStorage.getItem("token"); }
 function authHeaders() { return { "Authorization": "Bearer " + getToken() }; }
 
 function getCurrentUser() {
@@ -25,6 +25,128 @@ function showToast(msg) {
   clearTimeout(t._tid);
   t._tid = setTimeout(() => t.classList.remove("show"), 2600);
 }
+// ── GLOBAL USER SEARCH WITH SUGGESTIONS ──
+let searchTimeout;
+
+async function handleGlobalSearch(query) {
+  const dropdown = document.getElementById("searchDropdown");
+  if (!dropdown) return;
+
+  const q = query.trim();
+
+  if (!q) {
+    dropdown.innerHTML = "";
+    dropdown.classList.remove("open");
+    return;
+  }
+
+  // Show loading state
+  dropdown.innerHTML = `<div class="search-loading">🔍 Searching...</div>`;
+  dropdown.classList.add("open");
+
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch(`${API_USERS}/search?q=${encodeURIComponent(q)}`, {
+        headers: authHeaders()
+      });
+      const users = await res.json();
+
+      if (!users.length) {
+        dropdown.innerHTML = `
+          <div class="search-no-results">
+            <span>😕</span>
+            <p>No users found for "<strong>${escapeHtml(q)}</strong>"</p>
+          </div>`;
+        return;
+      }
+
+      dropdown.innerHTML = "";
+
+      // Header
+      const header = document.createElement("div");
+      header.className = "search-dropdown-header";
+      header.textContent = `👥 Users matching "${q}"`;
+      dropdown.appendChild(header);
+
+      users.forEach(user => {
+        // Highlight matching part of username
+        const highlighted = highlightMatch(user.username, q);
+
+        const item = document.createElement("div");
+        item.className = "search-result-item";
+        item.innerHTML = `
+          <img src="${user.avatarUrl || `https://i.pravatar.cc/36?u=${encodeURIComponent(user.username)}`}"
+               alt="${escapeHtml(user.username)}"/>
+          <div class="search-result-info">
+            <strong>${highlighted}</strong>
+            <small>${escapeHtml(user.headline || "DrinkedIn Member")}</small>
+          </div>
+          <div class="search-result-meta">
+            <span>${user.followers?.length || 0} followers</span>
+          </div>
+        `;
+
+        // Click navigates to their profile
+        item.addEventListener("mousedown", (e) => {
+          e.preventDefault(); // prevent blur hiding dropdown
+          goToUserProfile(user._id, user.username);
+        });
+
+        dropdown.appendChild(item);
+      });
+
+      // Footer — search all
+      const footer = document.createElement("div");
+      footer.className = "search-dropdown-footer";
+      footer.innerHTML = `<span>Press Enter to search all results</span>`;
+      dropdown.appendChild(footer);
+
+    } catch (err) {
+      dropdown.innerHTML = `<div class="search-no-results">Error searching</div>`;
+    }
+  }, 250); // 250ms debounce — fast like Google
+}
+
+// ── HIGHLIGHT MATCHING TEXT ──
+function highlightMatch(text, query) {
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, "gi");
+  return escapeHtml(text).replace(regex, `<mark class="search-highlight">$1</mark>`);
+}
+
+// ── HIDE SEARCH RESULTS ──
+function hideSearchResults() {
+  setTimeout(() => {
+    const dropdown = document.getElementById("searchDropdown");
+    if (dropdown) {
+      dropdown.classList.remove("open");
+      dropdown.innerHTML = "";
+    }
+  }, 150);
+}
+
+// ── GO TO USER PROFILE ──
+function goToUserProfile(userId, username) {
+  // Store target user and go to profile page
+  sessionStorage.setItem("viewingUser", JSON.stringify({ userId, username }));
+  window.location.href = `profile.html?user=${userId}`;
+
+  const dropdown = document.getElementById("searchDropdown");
+  if (dropdown) { dropdown.classList.remove("open"); dropdown.innerHTML = ""; }
+
+  const input = document.getElementById("globalSearchInput");
+  if (input) input.value = "";
+}
+
+// ── ENTER KEY — search in explore ──
+document.addEventListener("keydown", e => {
+  const input = document.getElementById("globalSearchInput");
+  if (e.key === "Enter" && document.activeElement === input) {
+    const q = input.value.trim();
+    if (q) window.location.href = `explore.html?search=${encodeURIComponent(q)}`;
+  }
+});
 
 function logout() {
   localStorage.removeItem("token");
@@ -33,9 +155,9 @@ function logout() {
 
 function timeAgo(date) {
   const diff = Math.floor((Date.now() - new Date(date)) / 1000);
-  if (diff < 60)     return "just now";
-  if (diff < 3600)   return Math.floor(diff / 60) + "m ago";
-  if (diff < 86400)  return Math.floor(diff / 3600) + "h ago";
+  if (diff < 60) return "just now";
+  if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+  if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
   if (diff < 604800) return Math.floor(diff / 86400) + "d ago";
   return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
@@ -55,13 +177,13 @@ function loadTheme() {
 }
 async function loadNavAvatar() {
   try {
-    const res  = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
+    const res = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
     const user = await res.json();
     if (!res.ok) return;
     if (user.avatarUrl) {
       document.querySelectorAll(".nav-avatar").forEach(img => img.src = user.avatarUrl);
     }
-  } catch {}
+  } catch { }
 }
 function resetSessionTimer() {
   localStorage.setItem("sessionExpiry", Date.now() + (3 * 60 * 60 * 1000));
@@ -76,13 +198,13 @@ function checkSessionExpiry() {
 }
 
 // ── STATE ──
-let currentPartnerId   = null;
+let currentPartnerId = null;
 let currentPartnerName = null;
-let currentRoomId      = null;
-let allConversations   = [];
-let socket             = null;
-let isTyping           = false;
-let typingTimeout      = null;
+let currentRoomId = null;
+let allConversations = [];
+let socket = null;
+let isTyping = false;
+let typingTimeout = null;
 
 // ── INIT SOCKET ──
 function initSocket() {
@@ -104,11 +226,11 @@ function initSocket() {
     }
     loadConversations(); // refresh inbox
   });
-// message edited
+  // message edited
   socket.on("message_edited", ({ messageId, text }) => {
-  const textEl = document.getElementById("msg-text-" + messageId);
-  if (textEl) textEl.textContent = text;
-});
+    const textEl = document.getElementById("msg-text-" + messageId);
+    if (textEl) textEl.textContent = text;
+  });
 
   // Message deleted
   socket.on("message_deleted", ({ messageId }) => {
@@ -149,7 +271,7 @@ function initSocket() {
 function updateOnlineStatus(onlineUserIds) {
   document.querySelectorAll(".conversation-item").forEach(el => {
     const partnerId = el.dataset.partnerId;
-    const dot       = el.querySelector(".online-dot");
+    const dot = el.querySelector(".online-dot");
     if (dot) dot.style.display = onlineUserIds.includes(partnerId) ? "block" : "none";
   });
 }
@@ -157,7 +279,7 @@ function updateOnlineStatus(onlineUserIds) {
 // ── LOAD CONVERSATIONS ──
 async function loadConversations() {
   try {
-    const res  = await fetch(`${API_MSG}/conversations`, { headers: authHeaders() });
+    const res = await fetch(`${API_MSG}/conversations`, { headers: authHeaders() });
     const data = await res.json();
     if (!res.ok) return;
 
@@ -167,7 +289,7 @@ async function loadConversations() {
     const totalUnread = data.reduce((sum, c) => sum + c.unreadCount, 0);
     const badge = document.getElementById("unreadBadge");
     if (badge) {
-      badge.textContent   = totalUnread;
+      badge.textContent = totalUnread;
       badge.style.display = totalUnread > 0 ? "flex" : "none";
     }
   } catch (err) {
@@ -187,9 +309,9 @@ function renderConversations(conversations) {
   list.innerHTML = "";
   conversations.forEach(({ partner, lastMessage, unreadCount }) => {
     const item = document.createElement("div");
-    item.className         = "conversation-item" + (currentPartnerId === partner._id.toString() ? " active" : "");
+    item.className = "conversation-item" + (currentPartnerId === partner._id.toString() ? " active" : "");
     item.dataset.partnerId = partner._id.toString();
-    item.onclick           = () => openConversation(partner._id, partner.username, partner.avatarUrl, partner.headline);
+    item.onclick = () => openConversation(partner._id, partner.username, partner.avatarUrl, partner.headline);
 
     item.innerHTML = `
       <div class="avatar-status-wrap">
@@ -222,20 +344,20 @@ async function openConversation(partnerId, partnerName, partnerAvatar, partnerHe
   // Leave old room
   if (currentRoomId && socket) socket.emit("leave_room", currentRoomId);
 
-  currentPartnerId   = partnerId.toString();
+  currentPartnerId = partnerId.toString();
   currentPartnerName = partnerName;
-  currentRoomId      = [getCurrentUser()?.userId, currentPartnerId].sort().join("_");
+  currentRoomId = [getCurrentUser()?.userId, currentPartnerId].sort().join("_");
 
   // Join new room
   if (socket) socket.emit("join_room", currentRoomId);
 
   // Update UI
-  document.getElementById("chatEmptyState").style.display  = "none";
-  document.getElementById("chatHeader").style.display      = "flex";
-  document.getElementById("chatMessages").style.display    = "flex";
-  document.getElementById("chatInputArea").style.display   = "flex";
+  document.getElementById("chatEmptyState").style.display = "none";
+  document.getElementById("chatHeader").style.display = "flex";
+  document.getElementById("chatMessages").style.display = "flex";
+  document.getElementById("chatInputArea").style.display = "flex";
 
-  document.getElementById("chatPartnerName").textContent     = partnerName;
+  document.getElementById("chatPartnerName").textContent = partnerName;
   document.getElementById("chatPartnerHeadline").textContent = partnerHeadline || "DrinkedIn Member";
   document.getElementById("chatPartnerAvatar").src =
     partnerAvatar || `https://i.pravatar.cc/44?u=${encodeURIComponent(partnerName)}`;
@@ -252,7 +374,7 @@ async function openConversation(partnerId, partnerName, partnerAvatar, partnerHe
 async function loadMessages() {
   if (!currentPartnerId) return;
   try {
-    const res      = await fetch(`${API_MSG}/${currentPartnerId}`, { headers: authHeaders() });
+    const res = await fetch(`${API_MSG}/${currentPartnerId}`, { headers: authHeaders() });
     const messages = await res.json();
     if (!res.ok) return;
     renderMessages(messages);
@@ -282,7 +404,7 @@ function appendMessage(msg, scroll = true) {
   const container = document.getElementById("chatMessages");
   if (!container) return;
 
-  const me     = getCurrentUser();
+  const me = getCurrentUser();
   const isMine = msg.senderId === me?.userId;
 
   // Remove "no messages" placeholder
@@ -292,9 +414,9 @@ function appendMessage(msg, scroll = true) {
   // Don't duplicate
   if (document.getElementById("msg-" + msg._id)) return;
 
-  const div     = document.createElement("div");
+  const div = document.createElement("div");
   div.className = "message-bubble-wrap " + (isMine ? "mine" : "theirs");
-  div.id        = "msg-" + msg._id;
+  div.id = "msg-" + msg._id;
 
   div.innerHTML = `
   <div class="message-bubble ${isMine ? "bubble-mine" : "bubble-theirs"}">
@@ -309,7 +431,7 @@ function appendMessage(msg, scroll = true) {
 `;
 
   container.appendChild(div);
-   if (scroll) {
+  if (scroll) {
     setTimeout(() => {
       container.scrollTop = container.scrollHeight;
     }, 50);
@@ -319,7 +441,7 @@ function appendMessage(msg, scroll = true) {
 // ── SEND MESSAGE ──
 async function sendMessage() {
   const input = document.getElementById("chatInput");
-  const text  = input?.value.trim();
+  const text = input?.value.trim();
   if (!text || !currentPartnerId) return;
 
   input.value = "";
@@ -330,10 +452,10 @@ async function sendMessage() {
   }
 
   try {
-    const res  = await fetch(`${API_MSG}/send`, {
-      method:  "POST",
+    const res = await fetch(`${API_MSG}/send`, {
+      method: "POST",
       headers: { ...authHeaders(), "Content-Type": "application/json" },
-      body:    JSON.stringify({ receiverId: currentPartnerId, text })
+      body: JSON.stringify({ receiverId: currentPartnerId, text })
     });
     const data = await res.json();
     if (!res.ok) { showToast(data.msg || "Error sending"); return; }
@@ -362,7 +484,7 @@ function handleTyping() {
 
 // ── EDIT MESSAGE ──
 async function editMessage(id) {
-  const textEl  = document.getElementById("msg-text-" + id);
+  const textEl = document.getElementById("msg-text-" + id);
   const oldText = textEl?.textContent || "";
   const newText = prompt("Edit message:", oldText);
 
@@ -370,9 +492,9 @@ async function editMessage(id) {
 
   try {
     const res = await fetch(`${API_MSG}/${id}`, {
-      method:  "PUT",
+      method: "PUT",
       headers: { ...authHeaders(), "Content-Type": "application/json" },
-      body:    JSON.stringify({ text: newText.trim() })
+      body: JSON.stringify({ text: newText.trim() })
     });
     const data = await res.json();
     if (res.ok) {
@@ -390,7 +512,7 @@ async function editMessage(id) {
 async function deleteMessage(id) {
   try {
     const res = await fetch(`${API_MSG}/${id}`, {
-      method:  "DELETE",
+      method: "DELETE",
       headers: authHeaders()
     });
     if (!res.ok) { const d = await res.json(); showToast(d.msg || "Error"); }
@@ -411,7 +533,7 @@ function openNewMessageModal() {
 function closeNewMessageModal() {
   document.getElementById("newMessageModal").classList.remove("open");
   document.body.style.overflow = "";
-  document.getElementById("userSearch").value            = "";
+  document.getElementById("userSearch").value = "";
   document.getElementById("userSearchResults").innerHTML = "";
 }
 
@@ -420,7 +542,7 @@ async function searchUsers(query) {
   if (!query.trim()) { results.innerHTML = ""; return; }
 
   try {
-    const res   = await fetch(`${API_USERS}/all`, { headers: authHeaders() });
+    const res = await fetch(`${API_USERS}/all`, { headers: authHeaders() });
     const users = await res.json();
 
     const filtered = users.filter(u =>
@@ -434,7 +556,7 @@ async function searchUsers(query) {
 
     results.innerHTML = "";
     filtered.forEach(user => {
-      const item     = document.createElement("div");
+      const item = document.createElement("div");
       item.className = "user-search-item";
       item.innerHTML = `
         <img src="${user.avatarUrl || `https://i.pravatar.cc/40?u=${encodeURIComponent(user.username)}`}"

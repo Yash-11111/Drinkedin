@@ -1,117 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Messages – DrinkedIn</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍸</text></svg>"/>
-  <link rel="stylesheet" href="css/style.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍸</text></svg>" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap"
+    rel="stylesheet" />
   <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 </head>
+
 <body>
 
-<nav class="navbar" id="navbar">
-  <div class="nav-inner">
-    <a href="index.html" class="logo">
-      <span class="logo-icon">🍸</span>
-      <span class="logo-text">Drinked<em>In</em></span>
-    </a>
-    <div class="nav-search">
-      <span class="search-icon">🔍</span>
-      <input type="text" placeholder="Search drinks, bars, people…"/>
-    </div>
-    <div class="nav-links">
-      <a href="index.html" class="nav-link" title="Feed">🏠<span>Feed</span></a>
-      <a href="messages.html" class="nav-link active" title="Messages">
-        💬<span>Messages</span>
-        <span class="badge" id="unreadBadge" style="display:none">0</span>
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-icon">🍸</span>
+        <span class="logo-text">Drinked<em>In</em></span>
       </a>
-      <a href="explore.html" class="nav-link" title="Explore">🌍<span>Explore</span></a>
-      <a href="events.html" class="nav-link" title="Events">🎉<span>Events</span></a>
-      <a href="notifications.html" class="nav-link" title="Notifications">
-        🔔<span id="notifBadge" class="badge" style="display:none">0</span>
-        <span>Alerts</span>
-      </a>
-      <a href="recommend.html" class="nav-link" title="AI">🤖<span>AI</span></a>
+      <div class="nav-search" style="position:relative">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="globalSearchInput" placeholder="Search users, drinks, tags…" autocomplete="off"
+          oninput="handleGlobalSearch(this.value)" onblur="hideSearchResults()"
+          onfocus="if(this.value) handleGlobalSearch(this.value)" />
+        <div class="search-dropdown" id="searchDropdown"></div>
+      </div>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link" title="Feed">🏠<span>Feed</span></a>
+        <a href="messages.html" class="nav-link active" title="Messages">
+          💬<span>Messages</span>
+          <span class="badge" id="unreadBadge" style="display:none">0</span>
+        </a>
+        <a href="explore.html" class="nav-link" title="Explore">🌍<span>Explore</span></a>
+        <a href="events.html" class="nav-link" title="Events">🎉<span>Events</span></a>
+        <a href="notifications.html" class="nav-link" title="Notifications">
+          🔔<span id="notifBadge" class="badge" style="display:none">0</span>
+          <span>Alerts</span>
+        </a>
+        <a href="recommend.html" class="nav-link" title="AI">🤖<span>AI</span></a>
         <a href="profile.html" class="nav-link" title="Profile">
           <img src="https://i.pravatar.cc/36?img=12" class="nav-avatar" alt="Profile" />
 
         </a>
-      <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle" title="Toggle theme">🌙</button>
-      <button class="btn-outline nav-logout" onclick="logout()">Logout</button>
+        <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle" title="Toggle theme">🌙</button>
+        <button class="btn-outline nav-logout" onclick="logout()">Logout</button>
+      </div>
     </div>
-  </div>
-</nav>
+  </nav>
 
-<div class="messages-layout">
+  <div class="messages-layout">
 
-  <!-- INBOX SIDEBAR -->
-  <div class="inbox-sidebar">
-    <div class="inbox-header">
-      <h2>💬 Messages</h2>
-      <button class="btn-primary new-msg-btn" onclick="openNewMessageModal()">+ New</button>
-    </div>
-    <div class="inbox-search">
-      <input type="text" id="inboxSearch" placeholder="Search conversations…"
-             oninput="filterConversations(this.value)"/>
-    </div>
-    <div id="conversationsList" class="conversations-list">
-      <p class="inbox-empty">Loading…</p>
-    </div>
-  </div>
-
-  <!-- CHAT WINDOW -->
-  <div class="chat-window" id="chatWindow">
-    <div class="chat-empty-state" id="chatEmptyState">
-      <span>💬</span>
-      <h3>Select a conversation</h3>
-      <p>or start a new one</p>
-      <button class="btn-primary" onclick="openNewMessageModal()">Start Messaging</button>
-    </div>
-
-    <!-- Chat header (hidden until conversation selected) -->
-    <div class="chat-header" id="chatHeader" style="display:none">
-      <img id="chatPartnerAvatar" src="" alt=""/>
-      <div>
-        <strong id="chatPartnerName"></strong>
-        <small id="chatPartnerHeadline"></small>
+    <!-- INBOX SIDEBAR -->
+    <div class="inbox-sidebar">
+      <div class="inbox-header">
+        <h2>💬 Messages</h2>
+        <button class="btn-primary new-msg-btn" onclick="openNewMessageModal()">+ New</button>
+      </div>
+      <div class="inbox-search">
+        <input type="text" id="inboxSearch" placeholder="Search conversations…"
+          oninput="filterConversations(this.value)" />
+      </div>
+      <div id="conversationsList" class="conversations-list">
+        <p class="inbox-empty">Loading…</p>
       </div>
     </div>
 
-    <!-- Messages area -->
-    <div class="chat-messages" id="chatMessages" style="display:none"></div>
+    <!-- CHAT WINDOW -->
+    <div class="chat-window" id="chatWindow">
+      <div class="chat-empty-state" id="chatEmptyState">
+        <span>💬</span>
+        <h3>Select a conversation</h3>
+        <p>or start a new one</p>
+        <button class="btn-primary" onclick="openNewMessageModal()">Start Messaging</button>
+      </div>
 
-    <!-- Input area -->
-    <div class="chat-input-area" id="chatInputArea" style="display:none">
-  <div class="typing-indicator" id="typingIndicator" style="display:none"></div>
-  <input type="text" id="chatInput" placeholder="Type a message… 🍸"
-         onkeydown="if(event.key==='Enter') sendMessage()"
-         oninput="handleTyping()"/>
-  <button class="chat-send-btn" onclick="sendMessage()">↑</button>
-</div>
+      <!-- Chat header (hidden until conversation selected) -->
+      <div class="chat-header" id="chatHeader" style="display:none">
+        <img id="chatPartnerAvatar" src="" alt="" />
+        <div>
+          <strong id="chatPartnerName"></strong>
+          <small id="chatPartnerHeadline"></small>
+        </div>
+      </div>
+
+      <!-- Messages area -->
+      <div class="chat-messages" id="chatMessages" style="display:none"></div>
+
+      <!-- Input area -->
+      <div class="chat-input-area" id="chatInputArea" style="display:none">
+        <div class="typing-indicator" id="typingIndicator" style="display:none"></div>
+        <input type="text" id="chatInput" placeholder="Type a message… 🍸"
+          onkeydown="if(event.key==='Enter') sendMessage()" oninput="handleTyping()" />
+        <button class="chat-send-btn" onclick="sendMessage()">↑</button>
+      </div>
+    </div>
+
   </div>
 
-</div>
-
-<!-- NEW MESSAGE MODAL -->
-<div class="modal-overlay" id="newMessageModal">
-  <div class="modal-card" style="max-width:420px">
-    <div class="modal-header">
-      <h3>💬 New Message</h3>
-      <button class="modal-close" onclick="closeNewMessageModal()">✕</button>
-    </div>
-    <div class="modal-body" style="flex-direction:column; gap:14px; padding:20px;">
-      <input type="text" id="userSearch" placeholder="Search for a user…"
-             oninput="searchUsers(this.value)"
-             style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;width:100%"/>
-      <div id="userSearchResults" class="user-search-results"></div>
+  <!-- NEW MESSAGE MODAL -->
+  <div class="modal-overlay" id="newMessageModal">
+    <div class="modal-card" style="max-width:420px">
+      <div class="modal-header">
+        <h3>💬 New Message</h3>
+        <button class="modal-close" onclick="closeNewMessageModal()">✕</button>
+      </div>
+      <div class="modal-body" style="flex-direction:column; gap:14px; padding:20px;">
+        <input type="text" id="userSearch" placeholder="Search for a user…" oninput="searchUsers(this.value)"
+          style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;width:100%" />
+        <div id="userSearchResults" class="user-search-results"></div>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="toast" id="toast"></div>
-<script src="js/config.js"></script>
-<script src="js/messages.js"></script>
+  <div class="toast" id="toast"></div>
+  <script src="js/config.js"></script>
+  <script src="js/messages.js"></script>
 </body>
+
 </html>

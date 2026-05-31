@@ -1487,3 +1487,73 @@ body.light-mode .post-image:hover { transform: scale(1.015); }
   cursor: pointer; font-size: 12px; padding: 0; line-height: 1;
 }
 .selected-invitee button:hover { color: #ff6b6b; }
+
+/* ================================================
+   GLOBAL SEARCH DROPDOWN
+   ================================================ */
+.nav-search { position: relative; }
+
+.search-dropdown {
+  display: none; position: absolute; top: calc(100% + 8px);
+  left: 0; right: 0; min-width: 320px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  z-index: 500; overflow: hidden;
+  animation: fadeInUp 0.15s ease;
+}
+.search-dropdown.open { display: block; }
+
+.search-dropdown-header {
+  padding: 10px 14px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.search-result-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; cursor: pointer;
+  transition: background 0.15s; border-bottom: 1px solid var(--border);
+}
+.search-result-item:last-of-type { border-bottom: none; }
+.search-result-item:hover { background: var(--surface); }
+
+.search-result-item img {
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 2px solid var(--border); object-fit: cover; flex-shrink: 0;
+}
+.search-result-info { flex: 1; min-width: 0; }
+.search-result-info strong {
+  font-size: 14px; display: block;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.search-result-info small { font-size: 11px; color: var(--text-muted); }
+
+.search-result-meta { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+/* Highlight matching text */
+.search-highlight {
+  background: rgba(252,252,98,0.3);
+  color: var(--yellow); border-radius: 2px;
+  padding: 0 1px; font-style: normal;
+}
+
+.search-loading {
+  padding: 16px 14px; font-size: 13px; color: var(--text-muted);
+  text-align: center;
+}
+.search-no-results {
+  padding: 20px 14px; text-align: center;
+  color: var(--text-muted);
+}
+.search-no-results span { font-size: 24px; display: block; margin-bottom: 8px; }
+.search-no-results p { font-size: 13px; }
+.search-no-results strong { color: var(--yellow); }
+
+.search-dropdown-footer {
+  padding: 9px 14px; background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--text-muted);
+  text-align: center;
+}

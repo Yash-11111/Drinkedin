@@ -1,9 +1,9 @@
 const API_EVENTS = `${BASE_URL}/api/events`;
-const API_USERS  = `${BASE_URL}/api/users`;
+const API_USERS = `${BASE_URL}/api/users`;
 
 if (!localStorage.getItem("token")) window.location.href = "login.html";
 
-function getToken()    { return localStorage.getItem("token"); }
+function getToken() { return localStorage.getItem("token"); }
 function authHeaders() { return { "Authorization": "Bearer " + getToken() }; }
 function getCurrentUser() {
   try { return JSON.parse(atob(getToken().split(".")[1])); }
@@ -19,6 +19,128 @@ function showToast(msg) {
   clearTimeout(t._tid);
   t._tid = setTimeout(() => t.classList.remove("show"), 2600);
 }
+// ── GLOBAL USER SEARCH WITH SUGGESTIONS ──
+let searchTimeout;
+
+async function handleGlobalSearch(query) {
+  const dropdown = document.getElementById("searchDropdown");
+  if (!dropdown) return;
+
+  const q = query.trim();
+
+  if (!q) {
+    dropdown.innerHTML = "";
+    dropdown.classList.remove("open");
+    return;
+  }
+
+  // Show loading state
+  dropdown.innerHTML = `<div class="search-loading">🔍 Searching...</div>`;
+  dropdown.classList.add("open");
+
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch(`${API_USERS}/search?q=${encodeURIComponent(q)}`, {
+        headers: authHeaders()
+      });
+      const users = await res.json();
+
+      if (!users.length) {
+        dropdown.innerHTML = `
+          <div class="search-no-results">
+            <span>😕</span>
+            <p>No users found for "<strong>${escapeHtml(q)}</strong>"</p>
+          </div>`;
+        return;
+      }
+
+      dropdown.innerHTML = "";
+
+      // Header
+      const header = document.createElement("div");
+      header.className = "search-dropdown-header";
+      header.textContent = `👥 Users matching "${q}"`;
+      dropdown.appendChild(header);
+
+      users.forEach(user => {
+        // Highlight matching part of username
+        const highlighted = highlightMatch(user.username, q);
+
+        const item = document.createElement("div");
+        item.className = "search-result-item";
+        item.innerHTML = `
+          <img src="${user.avatarUrl || `https://i.pravatar.cc/36?u=${encodeURIComponent(user.username)}`}"
+               alt="${escapeHtml(user.username)}"/>
+          <div class="search-result-info">
+            <strong>${highlighted}</strong>
+            <small>${escapeHtml(user.headline || "DrinkedIn Member")}</small>
+          </div>
+          <div class="search-result-meta">
+            <span>${user.followers?.length || 0} followers</span>
+          </div>
+        `;
+
+        // Click navigates to their profile
+        item.addEventListener("mousedown", (e) => {
+          e.preventDefault(); // prevent blur hiding dropdown
+          goToUserProfile(user._id, user.username);
+        });
+
+        dropdown.appendChild(item);
+      });
+
+      // Footer — search all
+      const footer = document.createElement("div");
+      footer.className = "search-dropdown-footer";
+      footer.innerHTML = `<span>Press Enter to search all results</span>`;
+      dropdown.appendChild(footer);
+
+    } catch (err) {
+      dropdown.innerHTML = `<div class="search-no-results">Error searching</div>`;
+    }
+  }, 250); // 250ms debounce — fast like Google
+}
+
+// ── HIGHLIGHT MATCHING TEXT ──
+function highlightMatch(text, query) {
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, "gi");
+  return escapeHtml(text).replace(regex, `<mark class="search-highlight">$1</mark>`);
+}
+
+// ── HIDE SEARCH RESULTS ──
+function hideSearchResults() {
+  setTimeout(() => {
+    const dropdown = document.getElementById("searchDropdown");
+    if (dropdown) {
+      dropdown.classList.remove("open");
+      dropdown.innerHTML = "";
+    }
+  }, 150);
+}
+
+// ── GO TO USER PROFILE ──
+function goToUserProfile(userId, username) {
+  // Store target user and go to profile page
+  sessionStorage.setItem("viewingUser", JSON.stringify({ userId, username }));
+  window.location.href = `profile.html?user=${userId}`;
+
+  const dropdown = document.getElementById("searchDropdown");
+  if (dropdown) { dropdown.classList.remove("open"); dropdown.innerHTML = ""; }
+
+  const input = document.getElementById("globalSearchInput");
+  if (input) input.value = "";
+}
+
+// ── ENTER KEY — search in explore ──
+document.addEventListener("keydown", e => {
+  const input = document.getElementById("globalSearchInput");
+  if (e.key === "Enter" && document.activeElement === input) {
+    const q = input.value.trim();
+    if (q) window.location.href = `explore.html?search=${encodeURIComponent(q)}`;
+  }
+});
 function logout() { localStorage.removeItem("token"); window.location.href = "login.html"; }
 function toggleTheme() {
   const isLight = document.body.classList.toggle("light-mode");
@@ -34,9 +156,9 @@ function loadTheme() {
 
 function timeAgo(date) {
   const diff = Math.floor((Date.now() - new Date(date)) / 1000);
-  if (diff < 60)     return "just now";
-  if (diff < 3600)   return Math.floor(diff / 60) + "m ago";
-  if (diff < 86400)  return Math.floor(diff / 3600) + "h ago";
+  if (diff < 60) return "just now";
+  if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+  if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
   return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
@@ -48,13 +170,13 @@ function formatEventDate(date) {
 }
 
 // ── STATE ──
-let drinkTags      = [];
+let drinkTags = [];
 let selectedInvitees = [];
 
 // ── LOAD EVENTS ──
 async function loadEvents() {
   try {
-    const res  = await fetch(`${API_EVENTS}/my-events`, { headers: authHeaders() });
+    const res = await fetch(`${API_EVENTS}/my-events`, { headers: authHeaders() });
     const data = await res.json();
     if (!res.ok) return;
 
@@ -111,11 +233,11 @@ function renderInvitedEvents(events) {
 
 // ── BUILD EVENT CARD ──
 function buildEventCard(event, isOwner, myStatus) {
-  const card     = document.createElement("div");
+  const card = document.createElement("div");
   card.className = "event-card";
-  card.id        = "event-" + event._id;
+  card.id = "event-" + event._id;
 
-  const isPast    = new Date(event.date) < new Date();
+  const isPast = new Date(event.date) < new Date();
   const statusMap = { pending: "⏳ Pending", accepted: "✅ Accepted", declined: "❌ Declined" };
 
   const drinksHTML = (event.drinks || []).map(d =>
@@ -176,13 +298,13 @@ function buildEventCard(event, isOwner, myStatus) {
 // ── OPEN EVENT DETAIL ──
 async function openEventDetail(id) {
   try {
-    const res   = await fetch(`${API_EVENTS}/${id}`, { headers: authHeaders() });
+    const res = await fetch(`${API_EVENTS}/${id}`, { headers: authHeaders() });
     const event = await res.json();
     if (!res.ok) return;
 
     const acceptedCount = event.invitees.filter(i => i.status === "accepted").length;
     const declinedCount = event.invitees.filter(i => i.status === "declined").length;
-    const pendingCount  = event.invitees.filter(i => i.status === "pending").length;
+    const pendingCount = event.invitees.filter(i => i.status === "pending").length;
 
     const inviteesDetailHTML = event.invitees.map(i => `
       <div class="follow-user-item">
@@ -234,10 +356,10 @@ function closeEventDetail() {
 // ── RESPOND TO EVENT ──
 async function respondToEvent(id, status) {
   try {
-    const res  = await fetch(`${API_EVENTS}/${id}/respond`, {
-      method:  "PUT",
+    const res = await fetch(`${API_EVENTS}/${id}/respond`, {
+      method: "PUT",
       headers: { ...authHeaders(), "Content-Type": "application/json" },
-      body:    JSON.stringify({ status })
+      body: JSON.stringify({ status })
     });
     const data = await res.json();
     if (!res.ok) { showToast(data.msg || "Error"); return; }
@@ -254,7 +376,7 @@ async function deleteEvent(id) {
   if (!confirm("Delete this event?")) return;
   try {
     const res = await fetch(`${API_EVENTS}/${id}`, {
-      method:  "DELETE",
+      method: "DELETE",
       headers: authHeaders()
     });
     if (res.ok) {
@@ -269,14 +391,14 @@ async function deleteEvent(id) {
 
 // ── CREATE EVENT MODAL ──
 function openCreateEventModal() {
-  drinkTags        = [];
+  drinkTags = [];
   selectedInvitees = [];
-  document.getElementById("eventTitle").value    = "";
-  document.getElementById("eventDesc").value     = "";
+  document.getElementById("eventTitle").value = "";
+  document.getElementById("eventDesc").value = "";
   document.getElementById("eventLocation").value = "";
-  document.getElementById("eventDate").value     = "";
-  document.getElementById("drinkTagsList").innerHTML      = "";
-  document.getElementById("inviteesList").innerHTML       = "";
+  document.getElementById("eventDate").value = "";
+  document.getElementById("drinkTagsList").innerHTML = "";
+  document.getElementById("inviteesList").innerHTML = "";
   document.getElementById("inviteeSearchResults").innerHTML = "";
   document.getElementById("inviteeSearch").value = "";
 
@@ -321,9 +443,9 @@ async function searchInvitees(query) {
 
   inviteeSearchTimeout = setTimeout(async () => {
     try {
-      const res   = await fetch(`${API_USERS}/all`, { headers: authHeaders() });
+      const res = await fetch(`${API_USERS}/all`, { headers: authHeaders() });
       const users = await res.json();
-      const me    = getCurrentUser();
+      const me = getCurrentUser();
 
       const filtered = users.filter(u =>
         u.username.toLowerCase().includes(query.toLowerCase()) &&
@@ -333,7 +455,7 @@ async function searchInvitees(query) {
 
       results.innerHTML = "";
       filtered.slice(0, 5).forEach(user => {
-        const item     = document.createElement("div");
+        const item = document.createElement("div");
         item.className = "user-search-item";
         item.innerHTML = `
           <img src="${user.avatarUrl || `https://i.pravatar.cc/36?u=${encodeURIComponent(user.username)}`}" alt="${escapeHtml(user.username)}"/>
@@ -344,7 +466,7 @@ async function searchInvitees(query) {
       });
 
       if (!filtered.length) results.innerHTML = `<p style="color:var(--text-muted);font-size:13px;padding:8px">No users found</p>`;
-    } catch {}
+    } catch { }
   }, 400);
 }
 
@@ -378,26 +500,26 @@ function renderInvitees() {
 
 // ── CREATE EVENT ──
 async function submitNewEvent() {
-  const title    = document.getElementById("eventTitle")?.value.trim();
-  const desc     = document.getElementById("eventDesc")?.value.trim();
+  const title = document.getElementById("eventTitle")?.value.trim();
+  const desc = document.getElementById("eventDesc")?.value.trim();
   const location = document.getElementById("eventLocation")?.value.trim();
-  const date     = document.getElementById("eventDate")?.value;
+  const date = document.getElementById("eventDate")?.value;
   const isPublic = document.getElementById("eventPublic")?.checked;
 
-  if (!title)    { showToast("Event title is required"); return; }
+  if (!title) { showToast("Event title is required"); return; }
   if (!location) { showToast("Location is required"); return; }
-  if (!date)     { showToast("Date & time is required"); return; }
+  if (!date) { showToast("Date & time is required"); return; }
 
   const btn = document.getElementById("createEventBtn");
   if (btn) { btn.disabled = true; btn.textContent = "Sending…"; }
 
   try {
-    const res  = await fetch(API_EVENTS, {
-      method:  "POST",
+    const res = await fetch(API_EVENTS, {
+      method: "POST",
       headers: { ...authHeaders(), "Content-Type": "application/json" },
-      body:    JSON.stringify({
+      body: JSON.stringify({
         title, description: desc, location, date,
-        drinks:     drinkTags,
+        drinks: drinkTags,
         inviteeIds: selectedInvitees.map(i => i._id),
         isPublic
       })
@@ -451,12 +573,12 @@ function initSocket() {
 // ── NAV AVATAR ──
 async function loadNavAvatar() {
   try {
-    const res  = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
+    const res = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
     const user = await res.json();
     if (user.avatarUrl) {
       document.querySelectorAll(".nav-avatar").forEach(img => img.src = user.avatarUrl);
     }
-  } catch {}
+  } catch { }
 }
 
 // ── NAVBAR SCROLL ──

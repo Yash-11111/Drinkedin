@@ -232,11 +232,11 @@ router.get("/following", auth, async (req, res) => {
 // ── SAVE / UNSAVE POST ──
 router.put("/save/:postId", auth, async (req, res) => {
   try {
-    const user   = await User.findById(req.user.userId);
+    const user = await User.findById(req.user.userId);
     if (!user) return res.status(404).json({ msg: "User not found" });
 
-    const postId    = req.params.postId;
-    const isSaved   = user.savedPosts.includes(postId);
+    const postId = req.params.postId;
+    const isSaved = user.savedPosts.includes(postId);
 
     if (isSaved) {
       user.savedPosts = user.savedPosts.filter(id => id !== postId);
@@ -254,10 +254,10 @@ router.put("/save/:postId", auth, async (req, res) => {
 // ── GET SAVED POSTS ──
 router.get("/saved-posts", auth, async (req, res) => {
   try {
-    const user  = await User.findById(req.user.userId);
+    const user = await User.findById(req.user.userId);
     if (!user) return res.status(404).json({ msg: "User not found" });
 
-    const Post  = require("../models/Post");
+    const Post = require("../models/Post");
     const posts = await Post.find({
       _id: { $in: user.savedPosts }
     }).sort({ createdAt: -1 });
@@ -268,5 +268,24 @@ router.get("/saved-posts", auth, async (req, res) => {
   }
 });
 
+// ── SEARCH USERS BY USERNAME ──
+router.get("/search", auth, async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || !q.trim())
+      return res.json([]);
+
+    const users = await User.find({
+      username: { $regex: q.trim(), $options: "i" },
+      _id: { $ne: req.user.userId }
+    })
+      .select("username avatarUrl headline followers following")
+      .limit(8);
+
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ msg: "Error searching users" });
+  }
+});
 module.exports = router;
 

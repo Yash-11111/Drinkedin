@@ -3,7 +3,7 @@ const API_USERS = `${BASE_URL}/api/users`;
 
 if (!localStorage.getItem("token")) window.location.href = "login.html";
 
-function getToken()    { return localStorage.getItem("token"); }
+function getToken() { return localStorage.getItem("token"); }
 function authHeaders() { return { "Authorization": "Bearer " + getToken() }; }
 
 function getCurrentUser() {
@@ -25,6 +25,128 @@ function showToast(msg) {
   clearTimeout(t._tid);
   t._tid = setTimeout(() => t.classList.remove("show"), 2600);
 }
+// ── GLOBAL USER SEARCH WITH SUGGESTIONS ──
+let searchTimeout;
+
+async function handleGlobalSearch(query) {
+  const dropdown = document.getElementById("searchDropdown");
+  if (!dropdown) return;
+
+  const q = query.trim();
+
+  if (!q) {
+    dropdown.innerHTML = "";
+    dropdown.classList.remove("open");
+    return;
+  }
+
+  // Show loading state
+  dropdown.innerHTML = `<div class="search-loading">🔍 Searching...</div>`;
+  dropdown.classList.add("open");
+
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch(`${API_USERS}/search?q=${encodeURIComponent(q)}`, {
+        headers: authHeaders()
+      });
+      const users = await res.json();
+
+      if (!users.length) {
+        dropdown.innerHTML = `
+          <div class="search-no-results">
+            <span>😕</span>
+            <p>No users found for "<strong>${escapeHtml(q)}</strong>"</p>
+          </div>`;
+        return;
+      }
+
+      dropdown.innerHTML = "";
+
+      // Header
+      const header = document.createElement("div");
+      header.className = "search-dropdown-header";
+      header.textContent = `👥 Users matching "${q}"`;
+      dropdown.appendChild(header);
+
+      users.forEach(user => {
+        // Highlight matching part of username
+        const highlighted = highlightMatch(user.username, q);
+
+        const item = document.createElement("div");
+        item.className = "search-result-item";
+        item.innerHTML = `
+          <img src="${user.avatarUrl || `https://i.pravatar.cc/36?u=${encodeURIComponent(user.username)}`}"
+               alt="${escapeHtml(user.username)}"/>
+          <div class="search-result-info">
+            <strong>${highlighted}</strong>
+            <small>${escapeHtml(user.headline || "DrinkedIn Member")}</small>
+          </div>
+          <div class="search-result-meta">
+            <span>${user.followers?.length || 0} followers</span>
+          </div>
+        `;
+
+        // Click navigates to their profile
+        item.addEventListener("mousedown", (e) => {
+          e.preventDefault(); // prevent blur hiding dropdown
+          goToUserProfile(user._id, user.username);
+        });
+
+        dropdown.appendChild(item);
+      });
+
+      // Footer — search all
+      const footer = document.createElement("div");
+      footer.className = "search-dropdown-footer";
+      footer.innerHTML = `<span>Press Enter to search all results</span>`;
+      dropdown.appendChild(footer);
+
+    } catch (err) {
+      dropdown.innerHTML = `<div class="search-no-results">Error searching</div>`;
+    }
+  }, 250); // 250ms debounce — fast like Google
+}
+
+// ── HIGHLIGHT MATCHING TEXT ──
+function highlightMatch(text, query) {
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, "gi");
+  return escapeHtml(text).replace(regex, `<mark class="search-highlight">$1</mark>`);
+}
+
+// ── HIDE SEARCH RESULTS ──
+function hideSearchResults() {
+  setTimeout(() => {
+    const dropdown = document.getElementById("searchDropdown");
+    if (dropdown) {
+      dropdown.classList.remove("open");
+      dropdown.innerHTML = "";
+    }
+  }, 150);
+}
+
+// ── GO TO USER PROFILE ──
+function goToUserProfile(userId, username) {
+  // Store target user and go to profile page
+  sessionStorage.setItem("viewingUser", JSON.stringify({ userId, username }));
+  window.location.href = `profile.html?user=${userId}`;
+
+  const dropdown = document.getElementById("searchDropdown");
+  if (dropdown) { dropdown.classList.remove("open"); dropdown.innerHTML = ""; }
+
+  const input = document.getElementById("globalSearchInput");
+  if (input) input.value = "";
+}
+
+// ── ENTER KEY — search in explore ──
+document.addEventListener("keydown", e => {
+  const input = document.getElementById("globalSearchInput");
+  if (e.key === "Enter" && document.activeElement === input) {
+    const q = input.value.trim();
+    if (q) window.location.href = `explore.html?search=${encodeURIComponent(q)}`;
+  }
+});
 function logout() {
   localStorage.removeItem("token");
   window.location.href = "login.html";
@@ -32,8 +154,8 @@ function logout() {
 
 function timeAgo(date) {
   const diff = Math.floor((Date.now() - new Date(date)) / 1000);
-  if (diff < 60)    return "just now";
-  if (diff < 3600)  return Math.floor(diff / 60) + "m ago";
+  if (diff < 60) return "just now";
+  if (diff < 3600) return Math.floor(diff / 60) + "m ago";
   if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
   return Math.floor(diff / 86400) + "d ago";
 }
@@ -53,13 +175,13 @@ function loadTheme() {
 }
 async function loadNavAvatar() {
   try {
-    const res  = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
+    const res = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
     const user = await res.json();
     if (!res.ok) return;
     if (user.avatarUrl) {
       document.querySelectorAll(".nav-avatar").forEach(img => img.src = user.avatarUrl);
     }
-  } catch {}
+  } catch { }
 }
 // session checker
 function resetSessionTimer() {
@@ -74,25 +196,25 @@ function checkSessionExpiry() {
   }
 }
 // ── STATE ──
-let allPosts        = [];
+let allPosts = [];
 let currentCategory = "all";
-let currentSearch   = "";
-let currentSort     = "newest";
-const PAGE_SIZE     = 12;
-let currentPage     = 1;
+let currentSearch = "";
+let currentSort = "newest";
+const PAGE_SIZE = 12;
+let currentPage = 1;
 
 // ── LOAD EXPLORE POSTS ──
 async function loadExplorePosts() {
   try {
     const params = new URLSearchParams();
     if (currentCategory !== "all") params.set("category", currentCategory);
-    if (currentSearch)             params.set("search",   currentSearch);
+    if (currentSearch) params.set("search", currentSearch);
 
-    const res  = await fetch(`${API_POSTS}/explore?${params}`, { headers: authHeaders() });
+    const res = await fetch(`${API_POSTS}/explore?${params}`, { headers: authHeaders() });
     const data = await res.json();
     if (!res.ok) return;
 
-    allPosts    = data;
+    allPosts = data;
     currentPage = 1;
     renderExplorePosts();
     updateFilterLabel();
@@ -105,8 +227,8 @@ async function loadExplorePosts() {
 // ── RENDER POSTS ──
 function renderExplorePosts() {
   const container = document.getElementById("explorePostsContainer");
-  const emptyEl   = document.getElementById("exploreEmpty");
-  const loadMore  = document.getElementById("loadMoreWrap");
+  const emptyEl = document.getElementById("exploreEmpty");
+  const loadMore = document.getElementById("loadMoreWrap");
   if (!container) return;
 
   // Sort
@@ -121,7 +243,7 @@ function renderExplorePosts() {
   container.innerHTML = "";
 
   if (!paginated.length) {
-    emptyEl.style.display  = "flex";
+    emptyEl.style.display = "flex";
     loadMore.style.display = "none";
     return;
   }
@@ -139,7 +261,7 @@ function renderExplorePosts() {
 
 // ── BUILD EXPLORE CARD ──
 function buildExploreCard(post, i) {
-  const card     = document.createElement("div");
+  const card = document.createElement("div");
   card.className = "explore-card";
   card.style.animationDelay = (i * 0.04) + "s";
 
@@ -204,8 +326,8 @@ function closeLightbox() {
 // ── FILTER BY CATEGORY ──
 function filterCategory(category, btn) {
   currentCategory = category;
-  currentSearch   = "";
-  currentPage     = 1;
+  currentSearch = "";
+  currentPage = 1;
 
   // Update active button
   document.querySelectorAll(".category-btn").forEach(b => b.classList.remove("active"));
@@ -226,9 +348,9 @@ function filterCategory(category, btn) {
 
 // ── FILTER BY TAG ──
 function filterByTag(tag) {
-  currentSearch   = tag;
+  currentSearch = tag;
   currentCategory = "all";
-  currentPage     = 1;
+  currentPage = 1;
 
   const es = document.getElementById("exploreSearch");
   const gs = document.getElementById("globalSearch");
@@ -249,9 +371,9 @@ let searchTimeout;
 function handleSearch(value) {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
-    currentSearch   = value.trim();
+    currentSearch = value.trim();
     currentCategory = "all";
-    currentPage     = 1;
+    currentPage = 1;
 
     document.querySelectorAll(".category-btn").forEach(b => b.classList.remove("active"));
     document.querySelector(".category-btn")?.classList.add("active");
@@ -266,8 +388,8 @@ function handleSearch(value) {
 // ── CLEAR FILTER ──
 function clearFilter() {
   currentCategory = "all";
-  currentSearch   = "";
-  currentPage     = 1;
+  currentSearch = "";
+  currentPage = 1;
 
   const es = document.getElementById("exploreSearch");
   const gs = document.getElementById("globalSearch");
@@ -308,15 +430,15 @@ function updateFilterLabel() {
   const label = document.getElementById("filterLabel");
   if (!label) return;
 
-  if (currentSearch)             label.textContent = `Results for: "${currentSearch}" (${allPosts.length})`;
+  if (currentSearch) label.textContent = `Results for: "${currentSearch}" (${allPosts.length})`;
   else if (currentCategory !== "all") label.textContent = `Category: ${currentCategory} (${allPosts.length})`;
-  else                           label.textContent = `Showing: All Pours (${allPosts.length})`;
+  else label.textContent = `Showing: All Pours (${allPosts.length})`;
 }
 
 // ── LOAD TRENDING TAGS ──
 async function loadTrendingTags() {
   try {
-    const res  = await fetch(`${API_POSTS}/trending-tags`, { headers: authHeaders() });
+    const res = await fetch(`${API_POSTS}/trending-tags`, { headers: authHeaders() });
     const tags = await res.json();
     if (!res.ok) return;
 
@@ -343,17 +465,17 @@ async function loadTrendingTags() {
 async function loadStats() {
   try {
     const postsRes = await fetch(`${API_POSTS}/explore`, { headers: authHeaders() });
-    const posts    = await postsRes.json();
+    const posts = await postsRes.json();
 
     const usersRes = await fetch(`${API_USERS}/all`, { headers: authHeaders() });
-    const users    = await usersRes.json();
+    const users = await usersRes.json();
 
     const totalPostsEl = document.getElementById("totalPostsCount");
     const totalUsersEl = document.getElementById("totalUsersCount");
 
-    if (totalPostsEl) totalPostsEl.textContent = posts.length  || 0;
+    if (totalPostsEl) totalPostsEl.textContent = posts.length || 0;
     if (totalUsersEl) totalUsersEl.textContent = (users.length || 0) + 1; // +1 for current user
-  } catch {}
+  } catch { }
 }
 
 // ── NAVBAR SCROLL ──
@@ -371,4 +493,15 @@ document.addEventListener("DOMContentLoaded", () => {
   loadExplorePosts();
   loadTrendingTags();
   loadStats();
+  // Auto-search if redirected from navbar search
+  const urlParams = new URLSearchParams(window.location.search);
+  const searchQ = urlParams.get("search");
+  if (searchQ) {
+    const esInput = document.getElementById("exploreSearch");
+    const gsInput = document.getElementById("globalSearchInput");
+    if (esInput) esInput.value = searchQ;
+    if (gsInput) gsInput.value = searchQ;
+    currentSearch = searchQ;
+    loadExplorePosts();
+  }
 });

@@ -39,6 +39,128 @@ function showToast(msg) {
   clearTimeout(t._tid);
   t._tid = setTimeout(() => t.classList.remove("show"), 2600);
 }
+// ── GLOBAL USER SEARCH WITH SUGGESTIONS ──
+let searchTimeout;
+
+async function handleGlobalSearch(query) {
+  const dropdown = document.getElementById("searchDropdown");
+  if (!dropdown) return;
+
+  const q = query.trim();
+
+  if (!q) {
+    dropdown.innerHTML = "";
+    dropdown.classList.remove("open");
+    return;
+  }
+
+  // Show loading state
+  dropdown.innerHTML = `<div class="search-loading">🔍 Searching...</div>`;
+  dropdown.classList.add("open");
+
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch(`${API_USERS}/search?q=${encodeURIComponent(q)}`, {
+        headers: authHeaders()
+      });
+      const users = await res.json();
+
+      if (!users.length) {
+        dropdown.innerHTML = `
+          <div class="search-no-results">
+            <span>😕</span>
+            <p>No users found for "<strong>${escapeHtml(q)}</strong>"</p>
+          </div>`;
+        return;
+      }
+
+      dropdown.innerHTML = "";
+
+      // Header
+      const header = document.createElement("div");
+      header.className = "search-dropdown-header";
+      header.textContent = `👥 Users matching "${q}"`;
+      dropdown.appendChild(header);
+
+      users.forEach(user => {
+        // Highlight matching part of username
+        const highlighted = highlightMatch(user.username, q);
+
+        const item = document.createElement("div");
+        item.className = "search-result-item";
+        item.innerHTML = `
+          <img src="${user.avatarUrl || `https://i.pravatar.cc/36?u=${encodeURIComponent(user.username)}`}"
+               alt="${escapeHtml(user.username)}"/>
+          <div class="search-result-info">
+            <strong>${highlighted}</strong>
+            <small>${escapeHtml(user.headline || "DrinkedIn Member")}</small>
+          </div>
+          <div class="search-result-meta">
+            <span>${user.followers?.length || 0} followers</span>
+          </div>
+        `;
+
+        // Click navigates to their profile
+        item.addEventListener("mousedown", (e) => {
+          e.preventDefault(); // prevent blur hiding dropdown
+          goToUserProfile(user._id, user.username);
+        });
+
+        dropdown.appendChild(item);
+      });
+
+      // Footer — search all
+      const footer = document.createElement("div");
+      footer.className = "search-dropdown-footer";
+      footer.innerHTML = `<span>Press Enter to search all results</span>`;
+      dropdown.appendChild(footer);
+
+    } catch (err) {
+      dropdown.innerHTML = `<div class="search-no-results">Error searching</div>`;
+    }
+  }, 250); // 250ms debounce — fast like Google
+}
+
+// ── HIGHLIGHT MATCHING TEXT ──
+function highlightMatch(text, query) {
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, "gi");
+  return escapeHtml(text).replace(regex, `<mark class="search-highlight">$1</mark>`);
+}
+
+// ── HIDE SEARCH RESULTS ──
+function hideSearchResults() {
+  setTimeout(() => {
+    const dropdown = document.getElementById("searchDropdown");
+    if (dropdown) {
+      dropdown.classList.remove("open");
+      dropdown.innerHTML = "";
+    }
+  }, 150);
+}
+
+// ── GO TO USER PROFILE ──
+function goToUserProfile(userId, username) {
+  // Store target user and go to profile page
+  sessionStorage.setItem("viewingUser", JSON.stringify({ userId, username }));
+  window.location.href = `profile.html?user=${userId}`;
+
+  const dropdown = document.getElementById("searchDropdown");
+  if (dropdown) { dropdown.classList.remove("open"); dropdown.innerHTML = ""; }
+
+  const input = document.getElementById("globalSearchInput");
+  if (input) input.value = "";
+}
+
+// ── ENTER KEY — search in explore ──
+document.addEventListener("keydown", e => {
+  const input = document.getElementById("globalSearchInput");
+  if (e.key === "Enter" && document.activeElement === input) {
+    const q = input.value.trim();
+    if (q) window.location.href = `explore.html?search=${encodeURIComponent(q)}`;
+  }
+});
 // ── SESSION TIMEOUT — 3 hours ──
 const SESSION_DURATION = 3 * 60 * 60 * 1000; // 3 hours in ms
 
@@ -761,7 +883,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showToast(`💬 New message from ${senderUsername}`);
       }
     });
-    
+
     feedSocket.on("event_notification", ({ receiverId, senderUsername, eventTitle }) => {
       if (receiverId === me.userId) {
         showToast(`🎉 ${senderUsername} invited you to "${eventTitle}"!`);

@@ -3,7 +3,7 @@ const API_USERS = `${BASE_URL}/api/users`;
 
 if (!localStorage.getItem("token")) window.location.href = "login.html";
 
-function getToken()    { return localStorage.getItem("token"); }
+function getToken() { return localStorage.getItem("token"); }
 function authHeaders() { return { "Authorization": "Bearer " + getToken() }; }
 
 function getCurrentUser() {
@@ -25,6 +25,129 @@ function showToast(msg) {
   clearTimeout(t._tid);
   t._tid = setTimeout(() => t.classList.remove("show"), 2600);
 }
+// ── GLOBAL USER SEARCH WITH SUGGESTIONS ──
+let searchTimeout;
+
+async function handleGlobalSearch(query) {
+  const dropdown = document.getElementById("searchDropdown");
+  if (!dropdown) return;
+
+  const q = query.trim();
+
+  if (!q) {
+    dropdown.innerHTML = "";
+    dropdown.classList.remove("open");
+    return;
+  }
+
+  // Show loading state
+  dropdown.innerHTML = `<div class="search-loading">🔍 Searching...</div>`;
+  dropdown.classList.add("open");
+
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch(`${API_USERS}/search?q=${encodeURIComponent(q)}`, {
+        headers: authHeaders()
+      });
+      const users = await res.json();
+
+      if (!users.length) {
+        dropdown.innerHTML = `
+          <div class="search-no-results">
+            <span>😕</span>
+            <p>No users found for "<strong>${escapeHtml(q)}</strong>"</p>
+          </div>`;
+        return;
+      }
+
+      dropdown.innerHTML = "";
+
+      // Header
+      const header = document.createElement("div");
+      header.className = "search-dropdown-header";
+      header.textContent = `👥 Users matching "${q}"`;
+      dropdown.appendChild(header);
+
+      users.forEach(user => {
+        // Highlight matching part of username
+        const highlighted = highlightMatch(user.username, q);
+
+        const item = document.createElement("div");
+        item.className = "search-result-item";
+        item.innerHTML = `
+          <img src="${user.avatarUrl || `https://i.pravatar.cc/36?u=${encodeURIComponent(user.username)}`}"
+               alt="${escapeHtml(user.username)}"/>
+          <div class="search-result-info">
+            <strong>${highlighted}</strong>
+            <small>${escapeHtml(user.headline || "DrinkedIn Member")}</small>
+          </div>
+          <div class="search-result-meta">
+            <span>${user.followers?.length || 0} followers</span>
+          </div>
+        `;
+
+        // Click navigates to their profile
+        item.addEventListener("mousedown", (e) => {
+          e.preventDefault(); // prevent blur hiding dropdown
+          goToUserProfile(user._id, user.username);
+        });
+
+        dropdown.appendChild(item);
+      });
+
+      // Footer — search all
+      const footer = document.createElement("div");
+      footer.className = "search-dropdown-footer";
+      footer.innerHTML = `<span>Press Enter to search all results</span>`;
+      dropdown.appendChild(footer);
+
+    } catch (err) {
+      dropdown.innerHTML = `<div class="search-no-results">Error searching</div>`;
+    }
+  }, 250); // 250ms debounce — fast like Google
+}
+
+// ── HIGHLIGHT MATCHING TEXT ──
+function highlightMatch(text, query) {
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, "gi");
+  return escapeHtml(text).replace(regex, `<mark class="search-highlight">$1</mark>`);
+}
+
+// ── HIDE SEARCH RESULTS ──
+function hideSearchResults() {
+  setTimeout(() => {
+    const dropdown = document.getElementById("searchDropdown");
+    if (dropdown) {
+      dropdown.classList.remove("open");
+      dropdown.innerHTML = "";
+    }
+  }, 150);
+}
+
+// ── GO TO USER PROFILE ──
+function goToUserProfile(userId, username) {
+  // Store target user and go to profile page
+  sessionStorage.setItem("viewingUser", JSON.stringify({ userId, username }));
+  window.location.href = `profile.html?user=${userId}`;
+
+  const dropdown = document.getElementById("searchDropdown");
+  if (dropdown) { dropdown.classList.remove("open"); dropdown.innerHTML = ""; }
+
+  const input = document.getElementById("globalSearchInput");
+  if (input) input.value = "";
+}
+
+// ── ENTER KEY — search in explore ──
+document.addEventListener("keydown", e => {
+  const input = document.getElementById("globalSearchInput");
+  if (e.key === "Enter" && document.activeElement === input) {
+    const q = input.value.trim();
+    if (q) window.location.href = `explore.html?search=${encodeURIComponent(q)}`;
+  }
+});
+
 function resetSessionTimer() {
   localStorage.setItem("sessionExpiry", Date.now() + (3 * 60 * 60 * 1000));
 }
@@ -44,9 +167,9 @@ function logout() {
 
 function timeAgo(date) {
   const diff = Math.floor((Date.now() - new Date(date)) / 1000);
-  if (diff < 60)     return "just now";
-  if (diff < 3600)   return Math.floor(diff / 60) + "m ago";
-  if (diff < 86400)  return Math.floor(diff / 3600) + "h ago";
+  if (diff < 60) return "just now";
+  if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+  if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
   if (diff < 604800) return Math.floor(diff / 86400) + "d ago";
   return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
@@ -66,23 +189,23 @@ function loadTheme() {
 }
 async function loadNavAvatar() {
   try {
-    const res  = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
+    const res = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
     const user = await res.json();
     if (!res.ok) return;
     if (user.avatarUrl) {
       document.querySelectorAll(".nav-avatar").forEach(img => img.src = user.avatarUrl);
     }
-  } catch {}
+  } catch { }
 }
 
 // ── STATE ──
 let allNotifications = [];
-let currentFilter    = "all";
+let currentFilter = "all";
 
 // ── LOAD NOTIFICATIONS ──
 async function loadNotifications() {
   try {
-    const res  = await fetch(API_NOTIF, { headers: authHeaders() });
+    const res = await fetch(API_NOTIF, { headers: authHeaders() });
     const data = await res.json();
     if (!res.ok) return;
 
@@ -116,21 +239,21 @@ function renderNotifications() {
 
   list.innerHTML = "";
   filtered.forEach(notif => {
-    const el     = document.createElement("div");
+    const el = document.createElement("div");
     el.className = `notif-item ${notif.read ? "" : "unread"}`;
-    el.id        = "notif-" + notif._id;
+    el.id = "notif-" + notif._id;
 
     const iconMap = {
-      cheer:   "🥂",
-      follow:  "🍻",
+      cheer: "🥂",
+      follow: "🍻",
       comment: "💬",
       message: "✉️",
-      event:   "🎉" 
+      event: "🎉"
     };
 
     const linkMap = {
-      cheer:   "index.html",
-      follow:  "profile.html",
+      cheer: "index.html",
+      follow: "profile.html",
       comment: "index.html",
       message: "messages.html",
       event: "events.html"
@@ -140,7 +263,7 @@ function renderNotifications() {
       <div class="notif-content" onclick="markRead('${notif._id}'); window.location='${linkMap[notif.type]}'">
         <div class="notif-avatar-wrap">
           <img src="${notif.senderAvatar ||
-            `https://i.pravatar.cc/44?u=${encodeURIComponent(notif.senderUsername || "user")}`}"
+      `https://i.pravatar.cc/44?u=${encodeURIComponent(notif.senderUsername || "user")}`}"
                alt="${escapeHtml(notif.senderUsername || "")}"/>
           <span class="notif-type-icon">${iconMap[notif.type]}</span>
         </div>
@@ -169,20 +292,20 @@ function filterNotifs(type, btn) {
 async function markRead(id) {
   try {
     await fetch(`${API_NOTIF}/${id}/read`, {
-      method:  "PUT",
+      method: "PUT",
       headers: authHeaders()
     });
     const notif = allNotifications.find(n => n._id === id);
     if (notif) notif.read = true;
     renderNotifications();
-  } catch {}
+  } catch { }
 }
 
 // ── MARK ALL READ ──
 async function markAllRead() {
   try {
     await fetch(`${API_NOTIF}/mark-all-read`, {
-      method:  "PUT",
+      method: "PUT",
       headers: authHeaders()
     });
     allNotifications.forEach(n => n.read = true);
@@ -197,7 +320,7 @@ async function markAllRead() {
 async function deleteNotif(id) {
   try {
     await fetch(`${API_NOTIF}/${id}`, {
-      method:  "DELETE",
+      method: "DELETE",
       headers: authHeaders()
     });
     allNotifications = allNotifications.filter(n => n._id !== id);
@@ -224,7 +347,7 @@ async function clearAll() {
 
 // ── SOCKET — live notifications ──
 function initSocket() {
-  const me     = getCurrentUser();
+  const me = getCurrentUser();
   if (!me) return;
 
   const socket = io(BASE_URL);
@@ -238,11 +361,11 @@ function initSocket() {
         // Reload notifications to show new one
         await loadNotifications();
         showToast(
-          event === "cheer_notification"   ? `🥂 ${data.senderUsername} cheered your post!`  :
-          event === "follow_notification"  ? `🍻 ${data.senderUsername} followed you!`        :
-          event === "comment_notification" ? `💬 ${data.senderUsername} commented on your post` :
-          event === "event_notification"   ? `🎉 ${data.senderUsername} invited you to "${data.eventTitle}"!` :
-          `✉️ New message from ${data.senderUsername}`
+          event === "cheer_notification" ? `🥂 ${data.senderUsername} cheered your post!` :
+            event === "follow_notification" ? `🍻 ${data.senderUsername} followed you!` :
+              event === "comment_notification" ? `💬 ${data.senderUsername} commented on your post` :
+                event === "event_notification" ? `🎉 ${data.senderUsername} invited you to "${data.eventTitle}"!` :
+                  `✉️ New message from ${data.senderUsername}`
         );
       }
     });

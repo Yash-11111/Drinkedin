@@ -22,9 +22,12 @@
         <span class="logo-icon">🍸</span>
         <span class="logo-text">Drinked<em>In</em></span>
       </a>
-      <div class="nav-search">
+      <div class="nav-search" style="position:relative">
         <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Search drinks, bars, people…" />
+        <input type="text" id="globalSearchInput" placeholder="Search users, drinks, tags…" autocomplete="off"
+          oninput="handleGlobalSearch(this.value)" onblur="hideSearchResults()"
+          onfocus="if(this.value) handleGlobalSearch(this.value)" />
+        <div class="search-dropdown" id="searchDropdown"></div>
       </div>
       <div class="nav-links">
         <a href="index.html" class="nav-link" title="Feed">🏠<span>Feed</span></a>
@@ -33,7 +36,7 @@
         </a>
         <a href="explore.html" class="nav-link" title="Explore">🌍<span>Explore</span></a>
         <a href="events.html" class="nav-link" title="Events">🎉<span>Events</span></a>
-        
+
         <a href="notifications.html" class="nav-link" title="Notifications">
           🔔<span id="notifBadge" class="badge" style="display:none">0</span>
           <span>Alerts</span>
