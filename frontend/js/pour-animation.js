@@ -1,35 +1,35 @@
 // ── POUR ANIMATION ──
-const FILL_RATE      = 1.2;   // % per tick
-const FILL_INTERVAL  = 50;    // ms per tick
-const MAX_GLASSES    = 4;
-const BOTTLE_DRAIN   = 1.5;   // % drained per tick
+const FILL_RATE     = 0.8;  // % per tick (slower = more satisfying)
+const FILL_INTERVAL = 40;   // ms per tick
+const MAX_GLASSES   = 4;    // glasses before reset
+const BOTTLE_START  = 90;   // start bottle fuller
 
-let isPaused       = false;
-let currentGlass   = 0;
-let glassLevels    = [0];
-let bottleLevel    = 55;
-let fillTimer      = null;
-let glassCount     = 1;
-let isPouring      = false;
+let currentGlass  = 0;
+let glassLevels   = [0];
+let bottleLevel   = BOTTLE_START;
+let fillTimer     = null;
+let glassCount    = 1;
+let isPouring     = false;
+let autoTimer     = null;
 
-const bottleWrap   = document.getElementById("bottleWrap");
-const pourStream   = document.getElementById("pourStream");
+const bottleWrap       = document.getElementById("bottleWrap");
+const pourStream       = document.getElementById("pourStream");
 const glassesContainer = document.getElementById("glassesContainer");
 const bubblesContainer = document.getElementById("bubblesContainer");
 
-// ── START POURING on hover ──
+// ── HOVER / TOUCH ──
 bottleWrap.addEventListener("mouseenter", startPouring);
 bottleWrap.addEventListener("mouseleave", stopPouring);
-
-// ── TOUCH support ──
-bottleWrap.addEventListener("touchstart", e => { e.preventDefault(); startPouring(); });
+bottleWrap.addEventListener("touchstart", e => { e.preventDefault(); startPouring(); }, { passive: false });
 bottleWrap.addEventListener("touchend",   stopPouring);
 
 function startPouring() {
-  if (bottleLevel <= 5) return;
+  if (bottleLevel <= 2) { resetAll(); return; }
   isPouring = true;
+  clearTimeout(autoTimer);
   bottleWrap.classList.add("pouring");
   pourStream.classList.add("active");
+  clearInterval(fillTimer);
   fillTimer = setInterval(pourTick, FILL_INTERVAL);
 }
 
@@ -38,17 +38,17 @@ function stopPouring() {
   bottleWrap.classList.remove("pouring");
   pourStream.classList.remove("active");
   clearInterval(fillTimer);
+  scheduleAutoPour();
 }
 
 function pourTick() {
-  if (!isPouring || bottleLevel <= 5) {
-    stopPouring();
-    return;
-  }
+  if (bottleLevel <= 0) { stopPouring(); resetAll(); return; }
 
   // Fill current glass
   glassLevels[currentGlass] = Math.min(100, glassLevels[currentGlass] + FILL_RATE);
-  bottleLevel = Math.max(0, bottleLevel - BOTTLE_DRAIN * 0.3);
+
+  // Drain bottle slowly — lasts all 4 glasses
+  bottleLevel = Math.max(0, bottleLevel - (BOTTLE_START / (MAX_GLASSES * 100 / FILL_RATE)) );
 
   // Update glass liquid
   const liquidEl = document.getElementById("liquid" + currentGlass);
@@ -58,41 +58,36 @@ function pourTick() {
   const bottleLiquidEl = document.getElementById("bottleLiquid");
   if (bottleLiquidEl) bottleLiquidEl.style.height = bottleLevel + "%";
 
-  // Spawn bubbles
-  if (Math.random() < 0.3) spawnBubble(currentGlass);
+  // Spawn bubbles occasionally
+  if (Math.random() < 0.25) spawnBubble(currentGlass);
 
-  // Glass full
+  // Glass is full
   if (glassLevels[currentGlass] >= 100) {
     const glassEl = document.getElementById("glass" + currentGlass);
-    if (glassEl) glassEl.classList.add("full");
+    if (glassEl) {
+      glassEl.classList.add("full");
+      glassEl.classList.remove("active");
+    }
 
-    setTimeout(() => {
-      addNewGlass();
-    }, 400);
-
-    stopPouring();
+    if (glassCount < MAX_GLASSES) {
+      setTimeout(addNewGlass, 300);
+    } else {
+      setTimeout(resetAll, 800);
+      stopPouring();
+    }
   }
 }
 
 function addNewGlass() {
-  if (glassCount >= MAX_GLASSES) {
-    // Reset all glasses
-    resetGlasses();
-    return;
-  }
-
-  // Deactivate current glass
-  const prevGlass = document.getElementById("glass" + currentGlass);
-  if (prevGlass) prevGlass.classList.remove("active");
-
-  // Create new glass
   currentGlass = glassCount;
   glassLevels.push(0);
   glassCount++;
 
-  const newGlass = document.createElement("div");
+  const newGlass     = document.createElement("div");
   newGlass.className = "glass active";
   newGlass.id        = "glass" + currentGlass;
+  newGlass.style.opacity   = "0";
+  newGlass.style.transform = "scale(0.7) translateY(10px)";
   newGlass.innerHTML = `
     <div class="glass-body">
       <div class="glass-liquid" id="liquid${currentGlass}"></div>
@@ -104,25 +99,37 @@ function addNewGlass() {
 
   glassesContainer.appendChild(newGlass);
 
-  // Scroll container if needed
-  glassesContainer.scrollLeft = glassesContainer.scrollWidth;
+  // Animate in
+  requestAnimationFrame(() => {
+    newGlass.style.transition = "opacity 0.35s, transform 0.35s";
+    newGlass.style.opacity    = "1";
+    newGlass.style.transform  = "scale(1) translateY(0)";
+  });
 }
 
-function resetGlasses() {
+function resetAll() {
+  clearInterval(fillTimer);
+  isPouring = false;
+  bottleWrap.classList.remove("pouring");
+  pourStream.classList.remove("active");
+
   // Fade out all glasses
   const glasses = glassesContainer.querySelectorAll(".glass");
-  glasses.forEach(g => { g.style.opacity = "0"; g.style.transform = "scale(0.5)"; });
+  glasses.forEach(g => {
+    g.style.transition = "opacity 0.5s, transform 0.5s";
+    g.style.opacity    = "0";
+    g.style.transform  = "scale(0.5) translateY(20px)";
+  });
 
   setTimeout(() => {
     // Reset state
-    glassCount   = 1;
-    currentGlass = 0;
-    glassLevels  = [0];
-    bottleLevel  = 55;
+    glassCount    = 1;
+    currentGlass  = 0;
+    glassLevels   = [0];
+    bottleLevel   = BOTTLE_START;
 
-    // Clear container
     glassesContainer.innerHTML = `
-      <div class="glass active" id="glass0">
+      <div class="glass active" id="glass0" style="opacity:0;transform:scale(0.7)">
         <div class="glass-body">
           <div class="glass-liquid" id="liquid0"></div>
           <div class="glass-shine"></div>
@@ -132,33 +139,45 @@ function resetGlasses() {
       </div>
     `;
 
-    // Reset bottle
+    // Animate first glass in
+    requestAnimationFrame(() => {
+      const g = document.getElementById("glass0");
+      if (g) {
+        g.style.transition = "opacity 0.4s, transform 0.4s";
+        g.style.opacity    = "1";
+        g.style.transform  = "scale(1)";
+      }
+    });
+
+    // Reset bottle level
     const bottleLiquidEl = document.getElementById("bottleLiquid");
     if (bottleLiquidEl) {
       bottleLiquidEl.style.transition = "height 1s ease";
-      bottleLiquidEl.style.height     = "55%";
-      setTimeout(() => { bottleLiquidEl.style.transition = "height 0.5s ease"; }, 1000);
+      bottleLiquidEl.style.height     = BOTTLE_START + "%";
+      setTimeout(() => { bottleLiquidEl.style.transition = "height 0.2s linear"; }, 1100);
     }
-  }, 600);
+
+    scheduleAutoPour();
+  }, 700);
 }
 
 function spawnBubble(glassIndex) {
   const glassEl = document.getElementById("glass" + glassIndex);
   if (!glassEl) return;
 
-  const rect   = glassEl.getBoundingClientRect();
+  const rect     = glassEl.getBoundingClientRect();
   const contRect = bubblesContainer.getBoundingClientRect();
 
-  const bubble = document.createElement("div");
+  const bubble   = document.createElement("div");
   bubble.className = "bubble";
 
-  const size = Math.random() * 6 + 3;
-  const x    = rect.left - contRect.left + Math.random() * 40 + 8;
-  const dur  = Math.random() * 800 + 600;
+  const size = Math.random() * 5 + 2;
+  const x    = rect.left - contRect.left + Math.random() * 36 + 8;
+  const dur  = Math.random() * 700 + 500;
 
   bubble.style.cssText = `
     width:${size}px; height:${size}px;
-    left:${x}px; bottom:${glassLevels[glassIndex] * 0.8}px;
+    left:${x}px; bottom:10px;
     animation-duration:${dur}ms;
   `;
 
@@ -166,20 +185,19 @@ function spawnBubble(glassIndex) {
   setTimeout(() => bubble.remove(), dur);
 }
 
-// ── AUTO POUR on idle (demo mode) ──
-let autoPourTimeout;
+// ── AUTO POUR in demo mode ──
 function scheduleAutoPour() {
-  autoPourTimeout = setTimeout(() => {
+  clearTimeout(autoTimer);
+  autoTimer = setTimeout(() => {
     if (!isPouring) {
       startPouring();
+      // Auto stop after 2.5s
       setTimeout(() => {
         if (isPouring) stopPouring();
-        scheduleAutoPour();
-      }, 2000);
-    } else {
-      scheduleAutoPour();
+      }, 2500);
     }
-  }, 3000);
+  }, 2500);
 }
 
+// ── START ──
 scheduleAutoPour();
