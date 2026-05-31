@@ -25,7 +25,6 @@ function showToast(msg) {
   clearTimeout(t._tid);
   t._tid = setTimeout(() => t.classList.remove("show"), 2600);
 }
-
 function logout() {
   localStorage.removeItem("token");
   window.location.href = "login.html";
@@ -51,6 +50,16 @@ function updateThemeIcon() {
 function loadTheme() {
   if (localStorage.getItem("theme") === "light") document.body.classList.add("light-mode");
   updateThemeIcon();
+}
+async function loadNavAvatar() {
+  try {
+    const res  = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
+    const user = await res.json();
+    if (!res.ok) return;
+    if (user.avatarUrl) {
+      document.querySelectorAll(".nav-avatar").forEach(img => img.src = user.avatarUrl);
+    }
+  } catch {}
 }
 
 // ── STATE ──
@@ -345,6 +354,7 @@ window.addEventListener("scroll", () => {
 // ── INIT ──
 document.addEventListener("DOMContentLoaded", () => {
   loadTheme();
+  loadNavAvatar();
   loadExplorePosts();
   loadTrendingTags();
   loadStats();

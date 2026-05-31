@@ -1,4 +1,4 @@
-const API_URL   = `${BASE_URL}/api/posts`;
+const API_URL = `${BASE_URL}/api/posts`;
 const API_POSTS = `${BASE_URL}/api/posts`;
 const API_USERS = `${BASE_URL}/api/users`;
 
@@ -69,9 +69,9 @@ function showToast(msg) {
 }
 function timeAgo(date) {
   const diff = Math.floor((Date.now() - new Date(date)) / 1000);
-  if (diff < 60)     return "just now";
-  if (diff < 3600)   return Math.floor(diff / 60) + "m ago";
-  if (diff < 86400)  return Math.floor(diff / 3600) + "h ago";
+  if (diff < 60) return "just now";
+  if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+  if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
   if (diff < 604800) return Math.floor(diff / 86400) + "d ago";
   if (diff < 2592000) return Math.floor(diff / 604800) + "w ago";
   return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -84,7 +84,7 @@ function toggleTheme() {
 }
 
 function updateThemeIcon() {
-  const btn     = document.getElementById("themeToggle");
+  const btn = document.getElementById("themeToggle");
   const isLight = document.body.classList.contains("light-mode");
   if (btn) btn.textContent = isLight ? "🌙" : "☀️";
 }
@@ -101,16 +101,16 @@ function logout() {
 }
 // ── AVATAR PICKER STATE ──
 let selectedDefaultAvatar = null; // 'male' or 'female'
-let selectedCustomFile    = null;
+let selectedCustomFile = null;
 
 const DEFAULT_AVATARS = {
-  male:   "https://i.pinimg.com/736x/8e/40/f8/8e40f83a0f6b6f2e66803af56507b05d.jpg",
+  male: "https://i.pinimg.com/736x/8e/40/f8/8e40f83a0f6b6f2e66803af56507b05d.jpg",
   female: "https://i.pinimg.com/736x/72/4b/a5/724ba58551a3e4c577110ab10395508d.jpg"
 };
 
 function openAvatarModal() {
   selectedDefaultAvatar = null;
-  selectedCustomFile    = null;
+  selectedCustomFile = null;
 
   // Clear state
   document.querySelectorAll(".avatar-option").forEach(o => o.classList.remove("selected"));
@@ -130,7 +130,7 @@ function closeAvatarModal() {
 
 function selectDefaultAvatar(type, el) {
   selectedDefaultAvatar = type;
-  selectedCustomFile    = null;
+  selectedCustomFile = null;
 
   // Clear file preview
   const preview = document.getElementById("avatarUploadPreview");
@@ -152,7 +152,7 @@ function handleAvatarUploadFromModal(input) {
   const file = input.files[0];
   if (!file) return;
 
-  selectedCustomFile    = file;
+  selectedCustomFile = file;
   selectedDefaultAvatar = null;
 
   // Clear default selection
@@ -191,10 +191,10 @@ async function saveSelectedAvatar() {
       const formData = new FormData();
       formData.append("avatar", selectedCustomFile);
 
-      const res  = await fetch(`${API_USERS}/avatar`, {
-        method:  "PUT",
+      const res = await fetch(`${API_USERS}/avatar`, {
+        method: "PUT",
         headers: { "Authorization": "Bearer " + getToken() },
-        body:    formData
+        body: formData
       });
       const data = await res.json();
 
@@ -211,10 +211,10 @@ async function saveSelectedAvatar() {
       // ── Save default avatar URL directly ──
       const url = DEFAULT_AVATARS[selectedDefaultAvatar];
 
-      const res  = await fetch(`${API_USERS}/avatar-url`, {
-        method:  "PUT",
+      const res = await fetch(`${API_USERS}/avatar-url`, {
+        method: "PUT",
         headers: { ...authHeaders(), "Content-Type": "application/json" },
-        body:    JSON.stringify({ avatarUrl: url, avatarType: selectedDefaultAvatar })
+        body: JSON.stringify({ avatarUrl: url, avatarType: selectedDefaultAvatar })
       });
       const data = await res.json();
 
@@ -243,38 +243,38 @@ async function loadProfile() {
       fetch(`${API_POSTS}/my-posts`, { headers: authHeaders() })
     ]);
 
-    const user      = await userRes.json();
+    const user = await userRes.json();
     const postsData = await postsRes.json();
 
     if (!userRes.ok || !postsRes.ok) return;
 
     // ── Update profile fields ──
-    const nameEl     = document.getElementById("username");
+    const nameEl = document.getElementById("username");
     const headlineEl = document.getElementById("profileHeadline");
     const locationEl = document.getElementById("profileLocation");
-    const bioEl      = document.getElementById("profileBio");
-    const totalEl    = document.getElementById("totalPosts");
+    const bioEl = document.getElementById("profileBio");
+    const totalEl = document.getElementById("totalPosts");
     const followerEl = document.getElementById("followerCount");
-    const followingEl= document.getElementById("followingCount");
+    const followingEl = document.getElementById("followingCount");
     // After setting bioEl
-const aboutList = document.getElementById("aboutList");
-if (aboutList) {
-  aboutList.innerHTML = "";
-  if (user.location) {
-    aboutList.innerHTML += `<li>📍 ${escapeHtml(user.location)}</li>`;
-  }
-  if (user.headline) {
-    aboutList.innerHTML += `<li>💼 ${escapeHtml(user.headline)}</li>`;
-  }
-}
+    const aboutList = document.getElementById("aboutList");
+    if (aboutList) {
+      aboutList.innerHTML = "";
+      if (user.location) {
+        aboutList.innerHTML += `<li>📍 ${escapeHtml(user.location)}</li>`;
+      }
+      if (user.headline) {
+        aboutList.innerHTML += `<li>💼 ${escapeHtml(user.headline)}</li>`;
+      }
+    }
 
-    if (nameEl)      nameEl.textContent      = user.username     || "Unknown";
-    if (headlineEl)  headlineEl.textContent  = user.headline     || "";
-    if (locationEl)  locationEl.textContent  = user.location ? "📍 " + user.location : "";
-    if (bioEl)       bioEl.textContent       = user.bio          || "";
-    if (totalEl)     totalEl.textContent     = postsData.totalPosts || 0;
-    if (followerEl)  followerEl.textContent  = user.followers?.length  || 0;
-    if (followingEl) followingEl.textContent = user.following?.length  || 0;
+    if (nameEl) nameEl.textContent = user.username || "Unknown";
+    if (headlineEl) headlineEl.textContent = user.headline || "";
+    if (locationEl) locationEl.textContent = user.location ? "📍 " + user.location : "";
+    if (bioEl) bioEl.textContent = user.bio || "";
+    if (totalEl) totalEl.textContent = postsData.totalPosts || 0;
+    if (followerEl) followerEl.textContent = user.followers?.length || 0;
+    if (followingEl) followingEl.textContent = user.following?.length || 0;
 
     // ── Update avatar ──
     if (user.avatarUrl) {
@@ -289,6 +289,16 @@ if (aboutList) {
     console.error(err);
     showToast("Could not load profile.");
   }
+}
+async function loadNavAvatar() {
+  try {
+    const res  = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
+    const user = await res.json();
+    if (!res.ok) return;
+    if (user.avatarUrl) {
+      document.querySelectorAll(".nav-avatar").forEach(img => img.src = user.avatarUrl);
+    }
+  } catch {}
 }
 function renderMyPosts(posts) {
   const container = document.getElementById("myPosts");
@@ -307,7 +317,7 @@ function renderMyPosts(posts) {
   }
 
   posts.forEach((post, i) => {
-    const el     = document.createElement("div");
+    const el = document.createElement("div");
     el.className = "post-card";
     el.style.animationDelay = (i * 0.06) + "s";
 
@@ -460,7 +470,7 @@ async function saveProfile() {
       body: JSON.stringify({ username, headline, location, bio })
     });
     const data = await res.json();
-    if(data.token) localStorage.setItem("token", data.token); // Update token if username changed
+    if (data.token) localStorage.setItem("token", data.token); // Update token if username changed
 
     if (!res.ok) { showToast(data.msg || "Error saving"); return; }
 
@@ -497,6 +507,7 @@ async function saveProfile() {
 
 document.addEventListener("DOMContentLoaded", () => {
   loadTheme();
+  loadNavAvatar();
   loadProfile();
 
 
@@ -551,7 +562,7 @@ async function openFollowModal(type) {
 }
 
 function shareProfile() {
-  const me  = getCurrentUser();
+  const me = getCurrentUser();
   const url = `${window.location.origin}/profile.html?user=${me?.userId}`;
 
   if (navigator.clipboard) {
@@ -569,7 +580,7 @@ function fallbackCopy(text) {
   const el = document.createElement("textarea");
   el.value = text;
   el.style.position = "fixed";
-  el.style.opacity  = "0";
+  el.style.opacity = "0";
   document.body.appendChild(el);
   el.select();
   document.execCommand("copy");
@@ -584,7 +595,7 @@ function closeFollowModal() {
 
 async function loadSavedPosts() {
   try {
-    const res   = await fetch(`${API_USERS}/saved-posts`, { headers: authHeaders() });
+    const res = await fetch(`${API_USERS}/saved-posts`, { headers: authHeaders() });
     const posts = await res.json();
     if (!res.ok) return;
 
@@ -613,7 +624,7 @@ async function loadSavedPosts() {
         `<span class="post-tag">#${t}</span>`
       ).join("");
 
-      const el     = document.createElement("div");
+      const el = document.createElement("div");
       el.className = "post-card";
       el.innerHTML = `
         <div class="post-header">
@@ -643,7 +654,7 @@ async function loadSavedPosts() {
 async function unsavePost(postId, btn) {
   try {
     const res = await fetch(`${API_USERS}/save/${postId}`, {
-      method:  "PUT",
+      method: "PUT",
       headers: authHeaders()
     });
     if (res.ok) {

@@ -52,6 +52,16 @@ function loadTheme() {
   if (localStorage.getItem("theme") === "light") document.body.classList.add("light-mode");
   updateThemeIcon();
 }
+async function loadNavAvatar() {
+  try {
+    const res  = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
+    const user = await res.json();
+    if (!res.ok) return;
+    if (user.avatarUrl) {
+      document.querySelectorAll(".nav-avatar").forEach(img => img.src = user.avatarUrl);
+    }
+  } catch {}
+}
 
 // ── STATE ──
 let allNotifications = [];
@@ -233,6 +243,7 @@ window.addEventListener("scroll", () => {
 // ── INIT ──
 document.addEventListener("DOMContentLoaded", () => {
   loadTheme();
+  loadNavAvatar();
   initSocket();
   loadNotifications();
 });
