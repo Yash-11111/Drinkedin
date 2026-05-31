@@ -1,4 +1,5 @@
 const API_NOTIF = `${BASE_URL}/api/notifications`;
+const API_USERS = `${BASE_URL}/api/users`;
 
 if (!localStorage.getItem("token")) window.location.href = "login.html";
 
