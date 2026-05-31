@@ -377,7 +377,7 @@ function renderInvitees() {
 }
 
 // ── CREATE EVENT ──
-async function createEvent() {
+async function submitNewEvent() {
   const title    = document.getElementById("eventTitle")?.value.trim();
   const desc     = document.getElementById("eventDesc")?.value.trim();
   const location = document.getElementById("eventLocation")?.value.trim();
