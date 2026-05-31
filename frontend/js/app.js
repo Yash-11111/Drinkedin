@@ -39,6 +39,41 @@ function showToast(msg) {
   clearTimeout(t._tid);
   t._tid = setTimeout(() => t.classList.remove("show"), 2600);
 }
+// ── SESSION TIMEOUT — 3 hours ──
+const SESSION_DURATION = 3 * 60 * 60 * 1000; // 3 hours in ms
+
+function resetSessionTimer() {
+  const expiry = Date.now() + SESSION_DURATION;
+  localStorage.setItem("sessionExpiry", expiry);
+}
+
+function checkSessionExpiry() {
+  const expiry = localStorage.getItem("sessionExpiry");
+  if (!expiry) { resetSessionTimer(); return; }
+
+  if (Date.now() > parseInt(expiry)) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("sessionExpiry");
+    showSessionExpiredToast();
+    setTimeout(() => { window.location.href = "login.html"; }, 2500);
+  }
+}
+
+function showSessionExpiredToast() {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = " Please login again 🔒";
+  t.classList.add("show");
+}
+
+// Reset timer on any user activity
+["click", "keydown", "scroll", "mousemove", "touchstart"].forEach(event => {
+  document.addEventListener(event, resetSessionTimer, { passive: true });
+});
+
+// Check every minute
+setInterval(checkSessionExpiry, 60 * 1000);
+
 // ── TIME AGO ──
 function timeAgo(date) {
   const diff = Math.floor((Date.now() - new Date(date)) / 1000);
@@ -90,7 +125,7 @@ function showCurrentUser() {
 
 async function loadNavUser() {
   try {
-    const res  = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
+    const res = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
     const user = await res.json();
     if (!res.ok) return;
 
@@ -108,19 +143,19 @@ async function loadNavUser() {
     }
 
     // Update sidebar stats
-    const pourEl      = document.getElementById("sidebarPours");
-    const followerEl  = document.getElementById("sidebarFollowers");
+    const pourEl = document.getElementById("sidebarPours");
+    const followerEl = document.getElementById("sidebarFollowers");
     const followingEl = document.getElementById("sidebarFollowing");
 
-    if (followerEl)  followerEl.textContent  = user.followers?.length  || 0;
-    if (followingEl) followingEl.textContent = user.following?.length  || 0;
+    if (followerEl) followerEl.textContent = user.followers?.length || 0;
+    if (followingEl) followingEl.textContent = user.following?.length || 0;
 
     // Fetch post count separately
     try {
-      const postsRes  = await fetch(`${API_POSTS}/my-posts`, { headers: authHeaders() });
+      const postsRes = await fetch(`${API_POSTS}/my-posts`, { headers: authHeaders() });
       const postsData = await postsRes.json();
       if (pourEl) pourEl.textContent = postsData.totalPosts || 0;
-    } catch {}
+    } catch { }
 
   } catch (err) {
     console.error("loadNavUser error:", err);
@@ -156,12 +191,12 @@ async function renderPosts(posts) {
 
   container.innerHTML = "";
   const me = getCurrentUser();
-   let savedIds = [];
+  let savedIds = [];
   try {
-    const savedRes  = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
+    const savedRes = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
     const savedData = await savedRes.json();
     savedIds = savedData.savedPosts || [];
-  } catch {}
+  } catch { }
 
   posts.forEach((post, i) => {
     const isOwner = me && me.userId === post.userId;
@@ -182,7 +217,7 @@ async function renderPosts(posts) {
   </div>
 `).join("");
 
-   const ownerBtns = isOwner ? `
+    const ownerBtns = isOwner ? `
   <button class="action-btn owner-btn edit-post-btn"
     data-id="${post._id}"
     data-story="${encodeURIComponent(post.story || '')}"
@@ -417,8 +452,8 @@ async function deletePost(id) {
 // ── SAVE / UNSAVE POST ──
 async function savePost(postId, btn) {
   try {
-    const res  = await fetch(`${API_USERS}/save/${postId}`, {
-      method:  "PUT",
+    const res = await fetch(`${API_USERS}/save/${postId}`, {
+      method: "PUT",
       headers: authHeaders()
     });
     const data = await res.json();
@@ -599,15 +634,15 @@ function addEmoji(emoji) {
 // ── FOLLOW / UNFOLLOW ──
 async function followUser(btn, targetId) {
   try {
-    const res  = await fetch(`${API_USERS}/follow/${targetId}`, {
-      method:  "PUT",
+    const res = await fetch(`${API_USERS}/follow/${targetId}`, {
+      method: "PUT",
       headers: authHeaders()
     });
     const data = await res.json();
     if (!res.ok) { showToast(data.msg || "Error"); return; }
 
     const isFollowing = data.following;
-    btn.textContent   = isFollowing ? "🍻 Following" : "+ Follow";
+    btn.textContent = isFollowing ? "🍻 Following" : "+ Follow";
     btn.classList.toggle("following", isFollowing);
     showToast(isFollowing ? "Following! 🍻" : "Unfollowed");
 
@@ -616,9 +651,9 @@ async function followUser(btn, targetId) {
     if (followingEl) followingEl.textContent = data.followingCount;
 
     // Update profile page counts if visible
-    const profileFollowerEl  = document.getElementById("followerCount");
+    const profileFollowerEl = document.getElementById("followerCount");
     const profileFollowingEl = document.getElementById("followingCount");
-    if (profileFollowerEl)  profileFollowerEl.textContent  = data.followerCount;
+    if (profileFollowerEl) profileFollowerEl.textContent = data.followerCount;
     if (profileFollowingEl) profileFollowingEl.textContent = data.followingCount;
 
   } catch {
@@ -629,21 +664,21 @@ async function followUser(btn, targetId) {
 function startChat(userId, username, avatarUrl, headline) {
   sessionStorage.setItem("chatTarget", JSON.stringify({
     userId,
-    username:  decodeURIComponent(username),
+    username: decodeURIComponent(username),
     avatarUrl: avatarUrl || null,
-    headline:  decodeURIComponent(headline || "")
+    headline: decodeURIComponent(headline || "")
   }));
   window.location.href = "messages.html";
 }
 // ── LOAD USER SUGGESTIONS ──
 async function loadSuggestions() {
   try {
-    const res   = await fetch(`${API_USERS}/all`, { headers: authHeaders() });
+    const res = await fetch(`${API_USERS}/all`, { headers: authHeaders() });
     const users = await res.json();
     if (!res.ok) return;
 
     // Get current user's following list
-    const meRes  = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
+    const meRes = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
     const meData = await meRes.json();
     const myFollowing = meData.following || [];
 
@@ -691,6 +726,8 @@ window.addEventListener("scroll", () => {
 // ===== INIT =====
 document.addEventListener("DOMContentLoaded", () => {
   loadTheme();
+  resetSessionTimer();
+  checkSessionExpiry();
   showCurrentUser();
   loadPosts();
   loadSuggestions();
@@ -724,6 +761,12 @@ document.addEventListener("DOMContentLoaded", () => {
         showToast(`💬 New message from ${senderUsername}`);
       }
     });
+    
+    feedSocket.on("event_notification", ({ receiverId, senderUsername, eventTitle }) => {
+      if (receiverId === me.userId) {
+        showToast(`🎉 ${senderUsername} invited you to "${eventTitle}"!`);
+      }
+    });
   }
   // Update notification badge
   async function updateNotifBadge() {
@@ -740,16 +783,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   document.addEventListener("click", e => {
-  const editBtn = e.target.closest(".edit-post-btn");
-  if (editBtn) {
-    openEditPostModal(
-      editBtn.dataset.id,
-      decodeURIComponent(editBtn.dataset.story),
-      decodeURIComponent(editBtn.dataset.image),
-      JSON.parse(decodeURIComponent(editBtn.dataset.tags))
-    );
-  }
-});
+    const editBtn = e.target.closest(".edit-post-btn");
+    if (editBtn) {
+      openEditPostModal(
+        editBtn.dataset.id,
+        decodeURIComponent(editBtn.dataset.story),
+        decodeURIComponent(editBtn.dataset.image),
+        JSON.parse(decodeURIComponent(editBtn.dataset.tags))
+      );
+    }
+  });
 });
 
 

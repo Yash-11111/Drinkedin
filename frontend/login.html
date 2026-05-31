@@ -10,33 +10,89 @@
 </head>
 <body>
 <div class="login-page">
-  <div class="login-card">
-    <div class="login-logo">
-      <span class="logo-icon">🍸</span>
-      <h1>Drinked<em>In</em></h1>
+
+  <!-- ANIMATION SIDE -->
+  <div class="login-animation-side">
+    <div class="animation-container">
+
+      <!-- BOTTLE -->
+      <div class="bottle-wrap" id="bottleWrap">
+        <div class="bottle" id="bottle">
+          <div class="bottle-neck"></div>
+          <div class="bottle-body">
+            <div class="bottle-liquid" id="bottleLiquid"></div>
+            <div class="bottle-label">
+              <span>DRINKED</span>
+              <span>IN</span>
+            </div>
+          </div>
+          <div class="bottle-cap"></div>
+        </div>
+        <div class="pour-stream" id="pourStream"></div>
+      </div>
+
+      <!-- GLASSES CONTAINER -->
+      <div class="glasses-container" id="glassesContainer">
+        <div class="glass active" id="glass0">
+          <div class="glass-body">
+            <div class="glass-liquid" id="liquid0"></div>
+            <div class="glass-shine"></div>
+          </div>
+          <div class="glass-stem"></div>
+          <div class="glass-base"></div>
+        </div>
+      </div>
+
+      <!-- BUBBLES -->
+      <div class="bubbles-container" id="bubblesContainer"></div>
+
     </div>
-    <p class="login-sub">Share your drinking stories</p>
 
-    <div class="form-group">
-      <input id="email" type="email" placeholder="Enter your email" autocomplete="email"/>
-      <button class="btn-primary send-otp-btn" onclick="sendOTP()">Send OTP</button>
+    <div class="animation-text">
+      <h2>Every Sip Has a Story</h2>
+      <p>Join the world's most spirited network</p>
     </div>
-
-    <div class="form-group" id="otpSection" style="display:none">
-      <input id="otp" type="text" placeholder="Enter OTP from email" maxlength="6" inputmode="numeric"/>
-      <button class="btn-primary" onclick="verifyOTP()">Login →</button>
-    </div>
-
-    <p id="status" class="status-msg"></p>
-
-    <p class="login-footer">No password. Just your email + OTP. 🔒</p>
   </div>
 
-  <div class="login-bottles">
-    <span>🍾</span><span>🥃</span><span>🍷</span><span>🍹</span><span>🍺</span>
+  <!-- LOGIN SIDE -->
+  <div class="login-card-side">
+    <div class="login-card">
+      <div class="login-logo">
+        <span class="logo-icon">🍸</span>
+        <h1>Drinked<em>In</em></h1>
+      </div>
+      <p class="login-sub">Sign in with your email — no password needed</p>
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input id="email" type="email" placeholder="your@email.com" autocomplete="email"/>
+        <button class="btn-primary send-otp-btn" onclick="sendOTP()">Send OTP →</button>
+      </div>
+
+      <div class="form-group" id="otpSection" style="display:none">
+        <label class="form-label">Enter OTP</label>
+        <p class="otp-hint">Check your email for a 6-digit code</p>
+        <div class="otp-input-row">
+          <input id="otp" type="text" placeholder="••••••" maxlength="6" inputmode="numeric"/>
+          <button class="btn-primary" onclick="verifyOTP()">Login →</button>
+        </div>
+        <button class="resend-btn" onclick="sendOTP()">Resend OTP</button>
+      </div>
+
+      <p id="status" class="status-msg"></p>
+
+      <div class="login-features">
+        <div class="feature-item">🔒 <span>No password needed</span></div>
+        <div class="feature-item">🍸 <span>Share your pours</span></div>
+        <div class="feature-item">🥂 <span>Connect with drinkers</span></div>
+        <div class="feature-item">🤖 <span>AI recommendations</span></div>
+      </div>
+    </div>
   </div>
+
 </div>
 <script src="js/config.js"></script>
 <script src="auth.js"></script>
+<script src="js/pour-animation.js"></script>
 </body>
 </html>

@@ -1358,3 +1358,132 @@ body.light-mode .post-image:hover { transform: scale(1.015); }
   cursor: pointer; transition: all 0.2s;
 }
 .widget-edit-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+
+/* ================================================
+   EVENTS PAGE
+   ================================================ */
+.events-hero {
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 48px 28px; text-align: center; position: relative; overflow: hidden;
+}
+.events-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 80%, rgba(252,252,98,0.07) 0%, transparent 60%);
+  pointer-events: none;
+}
+.events-hero-content { position: relative; z-index: 1; }
+.events-hero h1 {
+  font-family: 'Bebas Neue', cursive; font-size: clamp(42px, 6vw, 72px);
+  letter-spacing: 1px; color: var(--cream); line-height: 1; margin-bottom: 8px;
+}
+.events-hero p { font-size: 16px; color: var(--text-muted); margin-bottom: 20px; }
+
+.events-layout { max-width: 900px; margin: 28px auto; padding: 0 20px; }
+
+/* Tabs */
+.events-tabs {
+  display: flex; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; margin-bottom: 22px;
+}
+.events-tab {
+  flex: 1; background: none; border: none; padding: 14px 10px;
+  font-size: 14px; font-weight: 500; color: var(--text-muted);
+  cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;
+}
+.events-tab:hover { color: var(--text); background: var(--surface); }
+.events-tab.active { color: var(--yellow); border-bottom-color: var(--yellow); background: var(--surface); }
+.events-tab-content { display: none; animation: fadeIn 0.3s; }
+.events-tab-content.active { display: block; }
+
+/* Event card */
+.event-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  margin-bottom: 16px; transition: border-color 0.2s, transform 0.2s;
+  animation: fadeInUp 0.4s ease both;
+}
+.event-card:hover { border-color: var(--yellow); transform: translateY(-2px); }
+
+.event-card-header { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 14px; }
+.event-card-date {
+  background: var(--yellow); color: #000;
+  border-radius: var(--radius-sm); padding: 8px 12px;
+  display: flex; flex-direction: column; align-items: center;
+  flex-shrink: 0; min-width: 56px;
+}
+.event-card-date.past { background: var(--surface); color: var(--text-muted); }
+.event-month { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.event-day   { font-family: 'Bebas Neue', cursive; font-size: 28px; line-height: 1; }
+
+.event-card-info { flex: 1; }
+.event-card-info h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.event-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 3px; }
+.event-desc { font-size: 13px; color: var(--text-sub); margin-top: 8px; line-height: 1.6; }
+
+.event-card-creator {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  flex-shrink: 0;
+}
+.event-card-creator img {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 2px solid var(--border); object-fit: cover;
+}
+.event-card-creator small { font-size: 10px; color: var(--text-muted); }
+
+.event-drinks { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+
+.event-card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 14px; border-top: 1px solid var(--border);
+  flex-wrap: wrap; gap: 10px;
+}
+.event-invitees { display: flex; align-items: center; gap: 4px; }
+.invitee-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid var(--bg2); object-fit: cover;
+  margin-left: -6px;
+}
+.invitee-avatar:first-child { margin-left: 0; }
+.invitee-extra {
+  font-size: 12px; color: var(--text-muted);
+  background: var(--surface); border-radius: 50%;
+  width: 28px; height: 28px; display: flex;
+  align-items: center; justify-content: center;
+  border: 2px solid var(--bg2); margin-left: -6px;
+}
+.invitees-count { font-size: 12px; color: var(--text-muted); margin-left: 8px; }
+
+.event-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.event-action-btn { padding: 7px 14px; font-size: 13px; }
+.event-status-badge {
+  font-size: 13px; color: var(--yellow);
+  background: var(--surface); padding: 6px 12px;
+  border-radius: var(--radius-sm);
+}
+
+/* Event detail */
+.event-detail-info { display: flex; flex-direction: column; gap: 8px; }
+.event-detail-info p { font-size: 14px; color: var(--text-sub); }
+.event-rsvp-stats {
+  display: flex; gap: 20px;
+  background: var(--surface); border-radius: var(--radius-sm);
+  padding: 14px 20px;
+}
+.rsvp-stat { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.rsvp-stat strong { font-family: 'Bebas Neue', cursive; font-size: 28px; color: var(--yellow); }
+.rsvp-stat span { font-size: 12px; color: var(--text-muted); }
+
+/* Selected invitees */
+.invitees-selected { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.selected-invitee {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-pill); padding: 4px 10px 4px 6px;
+}
+.selected-invitee img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+.selected-invitee span { font-size: 12px; }
+.selected-invitee button {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 12px; padding: 0; line-height: 1;
+}
+.selected-invitee button:hover { color: #ff6b6b; }

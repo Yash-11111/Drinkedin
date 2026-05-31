@@ -25,6 +25,17 @@ function showToast(msg) {
   clearTimeout(t._tid);
   t._tid = setTimeout(() => t.classList.remove("show"), 2600);
 }
+function resetSessionTimer() {
+  localStorage.setItem("sessionExpiry", Date.now() + (3 * 60 * 60 * 1000));
+}
+function checkSessionExpiry() {
+  const expiry = localStorage.getItem("sessionExpiry");
+  if (expiry && Date.now() > parseInt(expiry)) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("sessionExpiry");
+    window.location.href = "login.html";
+  }
+}
 
 function logout() {
   localStorage.removeItem("token");
@@ -113,14 +124,16 @@ function renderNotifications() {
       cheer:   "🥂",
       follow:  "🍻",
       comment: "💬",
-      message: "✉️"
+      message: "✉️",
+      event:   "🎉" 
     };
 
     const linkMap = {
       cheer:   "index.html",
       follow:  "profile.html",
       comment: "index.html",
-      message: "messages.html"
+      message: "messages.html",
+      event: "events.html"
     };
 
     el.innerHTML = `
@@ -217,7 +230,7 @@ function initSocket() {
   const socket = io(BASE_URL);
   socket.emit("user_online", me.userId);
 
-  const events = ["cheer_notification", "follow_notification", "comment_notification", "message_notification"];
+  const events = ["cheer_notification", "follow_notification", "comment_notification", "message_notification", "event_notification"];
 
   events.forEach(event => {
     socket.on(event, async (data) => {
@@ -228,6 +241,7 @@ function initSocket() {
           event === "cheer_notification"   ? `🥂 ${data.senderUsername} cheered your post!`  :
           event === "follow_notification"  ? `🍻 ${data.senderUsername} followed you!`        :
           event === "comment_notification" ? `💬 ${data.senderUsername} commented on your post` :
+          event === "event_notification"   ? `🎉 ${data.senderUsername} invited you to "${data.eventTitle}"!` :
           `✉️ New message from ${data.senderUsername}`
         );
       }
@@ -244,6 +258,8 @@ window.addEventListener("scroll", () => {
 // ── INIT ──
 document.addEventListener("DOMContentLoaded", () => {
   loadTheme();
+  resetSessionTimer();
+  checkSessionExpiry();
   loadNavAvatar();
   initSocket();
   loadNotifications();

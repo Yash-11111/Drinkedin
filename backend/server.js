@@ -39,6 +39,7 @@ app.use("/api/users",    require("./routes/userRoutes"));
 app.use("/api/messages", require("./routes/messageRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/recommend", require("./routes/recommendRoutes"));
+app.use("/api/events", require("./routes/eventRoutes"));
 
 // ── HEALTH CHECK ──
 app.get("/api", (req, res) => res.json({ status: "DrinkedIn API running 🍸" }));

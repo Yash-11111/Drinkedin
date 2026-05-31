@@ -7,7 +7,7 @@ const notificationSchema = new mongoose.Schema({
   senderAvatar:   { type: String },
   type:           {
     type: String,
-    enum: ["cheer", "follow", "comment", "message"],
+    enum: ["cheer", "follow", "comment", "message","event"],
     required: true
   },
   message:  { type: String },  // human readable e.g. "Alex cheered your post"

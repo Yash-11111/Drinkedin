@@ -67,6 +67,17 @@ function showToast(msg) {
   clearTimeout(t._tid);
   t._tid = setTimeout(() => t.classList.remove("show"), 2600);
 }
+function resetSessionTimer() {
+  localStorage.setItem("sessionExpiry", Date.now() + (3 * 60 * 60 * 1000));
+}
+function checkSessionExpiry() {
+  const expiry = localStorage.getItem("sessionExpiry");
+  if (expiry && Date.now() > parseInt(expiry)) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("sessionExpiry");
+    window.location.href = "login.html";
+  }
+}
 function timeAgo(date) {
   const diff = Math.floor((Date.now() - new Date(date)) / 1000);
   if (diff < 60) return "just now";
@@ -292,13 +303,13 @@ async function loadProfile() {
 }
 async function loadNavAvatar() {
   try {
-    const res  = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
+    const res = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
     const user = await res.json();
     if (!res.ok) return;
     if (user.avatarUrl) {
       document.querySelectorAll(".nav-avatar").forEach(img => img.src = user.avatarUrl);
     }
-  } catch {}
+  } catch { }
 }
 function renderMyPosts(posts) {
   const container = document.getElementById("myPosts");
@@ -507,6 +518,8 @@ async function saveProfile() {
 
 document.addEventListener("DOMContentLoaded", () => {
   loadTheme();
+  resetSessionTimer();
+  checkSessionExpiry();
   loadNavAvatar();
   loadProfile();
 

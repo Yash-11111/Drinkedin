@@ -61,7 +61,18 @@ async function loadNavAvatar() {
     }
   } catch {}
 }
-
+// session checker
+function resetSessionTimer() {
+  localStorage.setItem("sessionExpiry", Date.now() + (3 * 60 * 60 * 1000));
+}
+function checkSessionExpiry() {
+  const expiry = localStorage.getItem("sessionExpiry");
+  if (expiry && Date.now() > parseInt(expiry)) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("sessionExpiry");
+    window.location.href = "login.html";
+  }
+}
 // ── STATE ──
 let allPosts        = [];
 let currentCategory = "all";
@@ -354,6 +365,8 @@ window.addEventListener("scroll", () => {
 // ── INIT ──
 document.addEventListener("DOMContentLoaded", () => {
   loadTheme();
+  resetSessionTimer();
+  checkSessionExpiry();
   loadNavAvatar();
   loadExplorePosts();
   loadTrendingTags();
