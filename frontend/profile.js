@@ -2,6 +2,17 @@ const API_URL = `${BASE_URL}/api/posts`;
 const API_POSTS = `${BASE_URL}/api/posts`;
 const API_USERS = `${BASE_URL}/api/users`;
 
+// Check if viewing someone else's profile
+function getViewingUserId() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("user") || null;
+}
+
+function isViewingOwnProfile() {
+  const viewingId = getViewingUserId();
+  const me        = getCurrentUser();
+  return !viewingId || viewingId === me?.userId;
+}
 if (!localStorage.getItem("token")) window.location.href = "login.html";
 
 function getToken() { return localStorage.getItem("token"); }
@@ -371,53 +382,90 @@ async function saveSelectedAvatar() {
 
 async function loadProfile() {
   try {
-    // Fetch user info and posts in parallel
+    const me          = getCurrentUser();
+    const viewingId   = getViewingUserId();
+    const isOwnProfile = isViewingOwnProfile();
+
+    // Fetch user info
+    const userUrl = isOwnProfile
+      ? `${API_USERS}/me`
+      : `${API_USERS}/${viewingId}`;
+
+    const postsUrl = isOwnProfile
+      ? `${API_POSTS}/my-posts`
+      : `${API_POSTS}/user/${viewingId}`;
+
     const [userRes, postsRes] = await Promise.all([
-      fetch(`${API_USERS}/me`, { headers: authHeaders() }),
-      fetch(`${API_POSTS}/my-posts`, { headers: authHeaders() })
+      fetch(userUrl,  { headers: authHeaders() }),
+      fetch(postsUrl, { headers: authHeaders() })
     ]);
 
-    const user = await userRes.json();
+    const user      = await userRes.json();
     const postsData = await postsRes.json();
 
-    if (!userRes.ok || !postsRes.ok) return;
+    if (!userRes.ok) return;
 
-    // ── Update profile fields ──
-    const nameEl = document.getElementById("username");
-    const headlineEl = document.getElementById("profileHeadline");
-    const locationEl = document.getElementById("profileLocation");
-    const bioEl = document.getElementById("profileBio");
-    const totalEl = document.getElementById("totalPosts");
-    const followerEl = document.getElementById("followerCount");
+    // ── Update fields ──
+    const nameEl      = document.getElementById("username");
+    const headlineEl  = document.getElementById("profileHeadline");
+    const locationEl  = document.getElementById("profileLocation");
+    const bioEl       = document.getElementById("profileBio");
+    const totalEl     = document.getElementById("totalPosts");
+    const followerEl  = document.getElementById("followerCount");
     const followingEl = document.getElementById("followingCount");
-    // After setting bioEl
-    const aboutList = document.getElementById("aboutList");
-    if (aboutList) {
-      aboutList.innerHTML = "";
-      if (user.location) {
-        aboutList.innerHTML += `<li>📍 ${escapeHtml(user.location)}</li>`;
-      }
-      if (user.headline) {
-        aboutList.innerHTML += `<li>💼 ${escapeHtml(user.headline)}</li>`;
-      }
+
+    if (nameEl)      nameEl.textContent      = user.username     || "Unknown";
+    if (headlineEl)  headlineEl.textContent  = user.headline     || "";
+    if (locationEl)  locationEl.textContent  = user.location ? "📍 " + user.location : "";
+    if (bioEl)       bioEl.textContent       = user.bio          || "";
+    if (totalEl)     totalEl.textContent     = postsData.totalPosts || 0;
+    if (followerEl)  followerEl.textContent  = user.followers?.length  || 0;
+    if (followingEl) followingEl.textContent = user.following?.length  || 0;
+
+    // ── Avatar ──
+    if (user.avatarUrl) {
+      document.querySelectorAll(".profile-avatar-xl, .nav-avatar, #editAvatarPreview, #mainAvatar")
+        .forEach(img => img.src = user.avatarUrl);
     }
 
-    if (nameEl) nameEl.textContent = user.username || "Unknown";
-    if (headlineEl) headlineEl.textContent = user.headline || "";
-    if (locationEl) locationEl.textContent = user.location ? "📍 " + user.location : "";
-    if (bioEl) bioEl.textContent = user.bio || "";
-    if (totalEl) totalEl.textContent = postsData.totalPosts || 0;
-    if (followerEl) followerEl.textContent = user.followers?.length || 0;
-    if (followingEl) followingEl.textContent = user.following?.length || 0;
+    // ── If viewing someone else — hide edit buttons, show follow button ──
+    if (!isOwnProfile) {
+      // Hide edit/change photo buttons
+      document.querySelectorAll(".btn-primary[onclick='openEditModal()'], .btn-outline[onclick='triggerAvatarUpload()'], .widget-edit-btn")
+        .forEach(el => el.style.display = "none");
 
-    // ── Update avatar ──
-    if (user.avatarUrl) {
-      document.querySelectorAll(".profile-avatar-xl, .nav-avatar, .sidebar-avatar, #editAvatarPreview, #mainAvatar")
-        .forEach(img => img.src = user.avatarUrl);
+      // Show follow button in hero
+      const actionBtns = document.querySelector(".profile-action-btns");
+      if (actionBtns) {
+        const isFollowing = user.followers?.includes(me?.userId);
+        actionBtns.innerHTML = `
+          <button class="btn-primary ${isFollowing ? 'following' : ''}"
+                  id="profileFollowBtn"
+                  onclick="followFromProfile('${user._id}', this)">
+            ${isFollowing ? "🍻 Following" : "+ Follow"}
+          </button>
+          <button class="btn-outline"
+                  onclick="window.location='messages.html?user=${user._id}&username=${encodeURIComponent(user.username)}'">
+            💬 Message
+          </button>
+        `;
+      }
+
+      // Hide edit/saved tabs — show only pours
+      const savedTab = document.querySelector(".profile-tab[onclick*='saved']");
+      if (savedTab) savedTab.style.display = "none";
     }
 
     // ── Render posts ──
     renderMyPosts(postsData.posts || []);
+
+    // ── About list ──
+    const aboutList = document.getElementById("aboutList");
+    if (aboutList) {
+      aboutList.innerHTML = "";
+      if (user.location) aboutList.innerHTML += `<li>📍 ${escapeHtml(user.location)}</li>`;
+      if (user.headline) aboutList.innerHTML += `<li>💼 ${escapeHtml(user.headline)}</li>`;
+    }
 
   } catch (err) {
     console.error(err);
@@ -694,6 +742,28 @@ async function openFollowModal(type) {
     });
   } catch {
     list.innerHTML = "<p style='color:var(--text-muted)'>Could not load list.</p>";
+  }
+}
+async function followFromProfile(targetId, btn) {
+  try {
+    const res  = await fetch(`${API_USERS}/follow/${targetId}`, {
+      method:  "PUT",
+      headers: authHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.msg || "Error"); return; }
+
+    const isFollowing = data.following;
+    btn.textContent   = isFollowing ? "🍻 Following" : "+ Follow";
+    btn.classList.toggle("following", isFollowing);
+
+    // Update follower count
+    const followerEl = document.getElementById("followerCount");
+    if (followerEl) followerEl.textContent = data.followerCount;
+
+    showToast(isFollowing ? "Following! 🍻" : "Unfollowed");
+  } catch {
+    showToast("Could not reach server.");
   }
 }
 

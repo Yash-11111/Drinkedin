@@ -142,7 +142,6 @@ function hideSearchResults() {
 
 // ── GO TO USER PROFILE ──
 function goToUserProfile(userId, username) {
-  // Store target user and go to profile page
   sessionStorage.setItem("viewingUser", JSON.stringify({ userId, username }));
   window.location.href = `profile.html?user=${userId}`;
 

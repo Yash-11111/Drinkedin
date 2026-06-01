@@ -287,5 +287,16 @@ router.get("/search", auth, async (req, res) => {
     res.status(500).json({ msg: "Error searching users" });
   }
 });
+// ── GET ANY USER BY ID ──
+router.get("/:userId", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId)
+      .select("-otp -otpExpiry");
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ msg: "Error fetching user" });
+  }
+});
 module.exports = router;
 

@@ -299,5 +299,14 @@ router.get("/trending-tags", async (req, res) => {
     res.status(500).json({ msg: "Error fetching trending tags" });
   }
 });
-
+// ── GET POSTS BY USER ID ──
+router.get("/user/:userId", auth, async (req, res) => {
+  try {
+    const posts = await Post.find({ userId: req.params.userId })
+      .sort({ createdAt: -1 });
+    res.json({ posts, totalPosts: posts.length });
+  } catch (err) {
+    res.status(500).json({ msg: "Error fetching user posts" });
+  }
+});
 module.exports = router;
