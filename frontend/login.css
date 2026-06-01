@@ -71,7 +71,7 @@ body {
   pointer-events: none;
 }
 .bottle-wrap.pouring {
-  transform: rotate(145deg); ;
+  transform: rotate(55deg); ;
 }
 
 /* ── BOTTLE PARTS ── */
