@@ -28,10 +28,11 @@ router.put("/avatar", auth, uploadAvatar.single("avatar"), async (req, res) => {
     user.avatarPublicId = req.file.filename;
     await user.save();
     // Update avatarUrl in all posts by this user
-    await Post.updateMany(
-      { userId: req.user.userId },
-      { $set: { avatarUrl: user.avatarUrl } }
-    );
+    const Post = require("../models/Post");
+await Post.updateMany(
+  { userId: req.user.userId },
+  { $set: { avatarUrl: user.avatarUrl } }
+);
     res.json({ msg: "Avatar updated", avatarUrl: user.avatarUrl });
   } catch { res.status(500).json({ msg: "Error uploading avatar" }); }
 });
