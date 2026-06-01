@@ -19,7 +19,7 @@ let isTransitioning = false;
 // ── TARGET: entire animation container ──
 const animContainer    = document.getElementById("animContainer");
 const bottleWrap       = document.getElementById("bottleWrap");
-const pourStream       = document.getElementById("pourStream");
+
 const glassesContainer = document.getElementById("glassesContainer");
 const bubblesContainer = document.getElementById("bubblesContainer");
 
@@ -42,7 +42,7 @@ function startPouring() {
   if (isPouring || isTransitioning || bottleLevel <= 1) return;
   isPouring = true;
   bottleWrap.classList.add("pouring");
-  pourStream.classList.add("active");
+ 
   clearInterval(fillTimer);
   fillTimer = setInterval(pourTick, FILL_INTERVAL);
 }
@@ -50,7 +50,7 @@ function startPouring() {
 function stopPouring() {
   isPouring = false;
   bottleWrap.classList.remove("pouring");
-  pourStream.classList.remove("active");
+
   clearInterval(fillTimer);
 }
 
