@@ -2,7 +2,17 @@ const API_URL = `${BASE_URL}/api/posts`;
 const API_POSTS = `${BASE_URL}/api/posts`;
 const API_USERS = `${BASE_URL}/api/users`;
 
+if (!localStorage.getItem("token")) window.location.href = "login.html";
+
+function getToken() { return localStorage.getItem("token"); }
+function authHeaders() { return { "Authorization": "Bearer " + getToken() }; }
+
 // Check if viewing someone else's profile
+function getCurrentUser() {
+  try { return JSON.parse(atob(getToken().split(".")[1])); }
+  catch { return null; }
+}
+
 function getViewingUserId() {
   const params = new URLSearchParams(window.location.search);
   return params.get("user") || null;
@@ -13,10 +23,6 @@ function isViewingOwnProfile() {
   const me        = getCurrentUser();
   return !viewingId || viewingId === me?.userId;
 }
-if (!localStorage.getItem("token")) window.location.href = "login.html";
-
-function getToken() { return localStorage.getItem("token"); }
-function authHeaders() { return { "Authorization": "Bearer " + getToken() }; }
 
 function triggerAvatarUpload() {
   openAvatarModal();
@@ -766,7 +772,6 @@ async function followFromProfile(targetId, btn) {
     showToast("Could not reach server.");
   }
 }
-
 function shareProfile() {
   const me = getCurrentUser();
   const url = `${window.location.origin}/profile.html?user=${me?.userId}`;
