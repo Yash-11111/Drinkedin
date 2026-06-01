@@ -429,38 +429,17 @@ async function loadProfile() {
     if (followingEl) followingEl.textContent = user.following?.length  || 0;
 
     // ── Avatar ──
-    if (user.avatarUrl) {
-      document.querySelectorAll(".profile-avatar-xl, .nav-avatar, #editAvatarPreview, #mainAvatar")
-        .forEach(img => img.src = user.avatarUrl);
-    }
-
-    // ── If viewing someone else — hide edit buttons, show follow button ──
-    if (!isOwnProfile) {
-      // Hide edit/change photo buttons
-      document.querySelectorAll(".btn-primary[onclick='openEditModal()'], .btn-outline[onclick='triggerAvatarUpload()'], .widget-edit-btn")
-        .forEach(el => el.style.display = "none");
-
-      // Show follow button in hero
-      const actionBtns = document.querySelector(".profile-action-btns");
-      if (actionBtns) {
-        const isFollowing = user.followers?.includes(me?.userId);
-        actionBtns.innerHTML = `
-          <button class="btn-primary ${isFollowing ? 'following' : ''}"
-                  id="profileFollowBtn"
-                  onclick="followFromProfile('${user._id}', this)">
-            ${isFollowing ? "🍻 Following" : "+ Follow"}
-          </button>
-          <button class="btn-outline"
-                  onclick="window.location='messages.html?user=${user._id}&username=${encodeURIComponent(user.username)}'">
-            💬 Message
-          </button>
-        `;
-      }
-
-      // Hide edit/saved tabs — show only pours
-      const savedTab = document.querySelector(".profile-tab[onclick*='saved']");
-      if (savedTab) savedTab.style.display = "none";
-    }
+   if (user.avatarUrl) {
+  if (isOwnProfile) {
+    // Update everything including navbar
+    document.querySelectorAll(".profile-avatar-xl, .nav-avatar, #editAvatarPreview, #mainAvatar")
+      .forEach(img => img.src = user.avatarUrl);
+  } else {
+    // ONLY update the profile hero avatar — never touch navbar
+    const profileAvatar = document.querySelector(".profile-avatar-xl");
+    if (profileAvatar) profileAvatar.src = user.avatarUrl;
+  }
+}
 
     // ── Render posts ──
     renderMyPosts(postsData.posts || []);
@@ -693,12 +672,12 @@ async function saveProfile() {
 
 
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   loadTheme();
   resetSessionTimer();
   checkSessionExpiry();
   loadNavAvatar();
-  loadProfile();
+  await loadProfile();
 
 
   // 👇 attach here instead of inline HTML
