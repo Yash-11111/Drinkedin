@@ -676,8 +676,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   loadTheme();
   resetSessionTimer();
   checkSessionExpiry();
-  loadNavAvatar();
   await loadProfile();
+  loadNavAvatar();
 
 
   // 👇 attach here instead of inline HTML
