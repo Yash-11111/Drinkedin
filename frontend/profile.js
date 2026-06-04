@@ -430,15 +430,43 @@ async function loadProfile() {
 
     // ── Avatar ──
    if (user.avatarUrl) {
-  if (isOwnProfile) {
-    // Update everything including navbar
-    document.querySelectorAll(".profile-avatar-xl, .nav-avatar, #editAvatarPreview, #mainAvatar")
-      .forEach(img => img.src = user.avatarUrl);
-  } else {
-    // ONLY update the profile hero avatar — never touch navbar
-    const profileAvatar = document.querySelector(".profile-avatar-xl");
-    if (profileAvatar) profileAvatar.src = user.avatarUrl;
+  if (!isOwnProfile) {
+  // Hide all own-only elements
+  document.querySelectorAll(".own-only").forEach(el => el.style.display = "none");
+
+  // Remove avatar click
+  const avatarXl = document.querySelector(".profile-avatar-xl");
+  if (avatarXl) { avatarXl.style.cursor = "default"; avatarXl.onclick = null; }
+
+  // Replace action buttons with Follow + Message
+  const actionBtns = document.getElementById("profileActionBtns");
+  if (actionBtns) {
+    const isFollowing = user.followers?.includes(me?.userId);
+    actionBtns.innerHTML = `
+      <button class="btn-primary ${isFollowing ? "following" : ""}"
+              id="profileFollowBtn"
+              onclick="followFromProfile('${user._id}', this)">
+        ${isFollowing ? "🍻 Following" : "+ Follow"}
+      </button>
+      <button class="btn-outline"
+              onclick="window.location='messages.html?user=${user._id}&username=${encodeURIComponent(user.username)}'">
+        💬 Message
+      </button>
+    `;
   }
+
+  // Disable edit functions
+  window.openEditModal       = () => {};
+  window.openAvatarModal     = () => {};
+  window.triggerAvatarUpload = () => {};
+
+  // Hide saved tab
+  const savedTab = document.querySelector(".profile-tab[onclick*='saved']");
+  if (savedTab) savedTab.style.display = "none";
+
+} else {
+  document.querySelectorAll(".own-only").forEach(el => el.style.display = "");
+}
 }
 
     // ── Render posts ──

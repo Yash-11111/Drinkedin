@@ -95,16 +95,13 @@
           </div>
           <div class="big-stat"><strong>4.8★</strong><span>Avg Rating</span></div>
         </div>
-        <!-- FROM -->
-        <div class="profile-action-btns">
-          <button class="btn-primary" onclick="triggerAvatarUpload()">📸 Change Photo</button>
-
-        </div>
+      
+      
 
         <!-- TO -->
-        <div class="profile-action-btns">
-          <button class="btn-primary" onclick="openEditModal()">✏️ Edit Profile</button>
-          <button class="btn-outline" onclick="triggerAvatarUpload()">📸 Change Photo</button>
+        <div class="profile-action-btns" id="profileActionBtns">
+          <button class="widget-edit-btn own-only" onclick="openEditModal()">✏️ Edit Profile</button>
+          <button class="avatar-edit-btn own-only" onclick="triggerAvatarUpload()">📸 Change Photo</button>
           <button class="btn-outline" onclick="shareProfile()">🔗 Share Profile</button>
         </div>
       </div>
