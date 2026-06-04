@@ -430,43 +430,17 @@ async function loadProfile() {
 
     // ── Avatar ──
    if (user.avatarUrl) {
-  if (!isOwnProfile) {
-  // Hide all own-only elements
-  document.querySelectorAll(".own-only").forEach(el => el.style.display = "none");
-
-  // Remove avatar click
-  const avatarXl = document.querySelector(".profile-avatar-xl");
-  if (avatarXl) { avatarXl.style.cursor = "default"; avatarXl.onclick = null; }
-
-  // Replace action buttons with Follow + Message
-  const actionBtns = document.getElementById("profileActionBtns");
-  if (actionBtns) {
-    const isFollowing = user.followers?.includes(me?.userId);
-    actionBtns.innerHTML = `
-      <button class="btn-primary ${isFollowing ? "following" : ""}"
-              id="profileFollowBtn"
-              onclick="followFromProfile('${user._id}', this)">
-        ${isFollowing ? "🍻 Following" : "+ Follow"}
-      </button>
-      <button class="btn-outline"
-              onclick="window.location='messages.html?user=${user._id}&username=${encodeURIComponent(user.username)}'">
-        💬 Message
-      </button>
-    `;
+  if (isOwnProfile) {
+    // Own profile — update hero + navbar + edit preview
+    document.querySelectorAll(".profile-avatar-xl, .nav-avatar, #editAvatarPreview, #mainAvatar")
+      .forEach(img => img.src = user.avatarUrl);
+  } else {
+    // Other user — ONLY update hero avatar, never navbar
+    const heroAvatar = document.querySelector(".profile-avatar-xl");
+    if (heroAvatar) heroAvatar.src = user.avatarUrl;
+    const mainAvatar = document.getElementById("mainAvatar");
+    if (mainAvatar) mainAvatar.src = user.avatarUrl;
   }
-
-  // Disable edit functions
-  window.openEditModal       = () => {};
-  window.openAvatarModal     = () => {};
-  window.triggerAvatarUpload = () => {};
-
-  // Hide saved tab
-  const savedTab = document.querySelector(".profile-tab[onclick*='saved']");
-  if (savedTab) savedTab.style.display = "none";
-
-} else {
-  document.querySelectorAll(".own-only").forEach(el => el.style.display = "");
-}
 }
 
     // ── Render posts ──
@@ -487,13 +461,15 @@ async function loadProfile() {
 }
 async function loadNavAvatar() {
   try {
-    const res = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
+    const res  = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
     const user = await res.json();
     if (!res.ok) return;
     if (user.avatarUrl) {
-      document.querySelectorAll(".nav-avatar").forEach(img => img.src = user.avatarUrl);
+      // ONLY navbar avatar 
+      document.querySelectorAll(".nav-avatar")
+        .forEach(img => img.src = user.avatarUrl);
     }
-  } catch { }
+  } catch {}
 }
 function renderMyPosts(posts) {
   const container = document.getElementById("myPosts");
@@ -702,10 +678,10 @@ async function saveProfile() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   loadTheme();
+  await loadProfile();
+  await loadNavAvatar();
   resetSessionTimer();
   checkSessionExpiry();
-  await loadProfile();
-  loadNavAvatar();
 
 
   // 👇 attach here instead of inline HTML
