@@ -14,7 +14,7 @@ function setStatus(msg, isError = false) {
 // ===== SEND OTP =====
 async function sendOTP() {
   const email = document.getElementById("email").value.trim();
-  const btn   = document.querySelector(".send-otp-btn");
+  const btn = document.querySelector(".send-otp-btn");
 
   if (!email) { setStatus("Please enter your email.", true); return; }
 
@@ -22,10 +22,10 @@ async function sendOTP() {
   if (btn) btn.disabled = true;
 
   try {
-    const res  = await fetch(`${AUTH_URL}/send-otp`, {
-      method:  "POST",
+    const res = await fetch(`${AUTH_URL}/send-otp`, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ email })
+      body: JSON.stringify({ email })
     });
     const data = await res.json();
 
@@ -36,7 +36,12 @@ async function sendOTP() {
       setStatus(data.msg || "Failed to send OTP.", true);
     }
   } catch (err) {
-    setStatus("Server error. Is the backend running?", true);
+
+
+    if (res.status === 429) {
+      setStatus("Too many attempts. Please wait before trying again. ⏳", true);
+      return;
+    }
   }
 
   // re-enable after 30 seconds
@@ -46,17 +51,17 @@ async function sendOTP() {
 // ===== VERIFY OTP =====
 async function verifyOTP() {
   const email = document.getElementById("email").value.trim();
-  const otp   = document.getElementById("otp").value.trim();
+  const otp = document.getElementById("otp").value.trim();
 
   if (!otp) { setStatus("Enter the OTP from your email.", true); return; }
 
   setStatus("Verifying...");
 
   try {
-    const res  = await fetch(`${AUTH_URL}/verify-otp`, {
-      method:  "POST",
+    const res = await fetch(`${AUTH_URL}/verify-otp`, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ email, otp })
+      body: JSON.stringify({ email, otp })
     });
     const data = await res.json();
 

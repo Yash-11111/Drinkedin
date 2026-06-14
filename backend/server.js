@@ -5,7 +5,13 @@ const cors      = require("cors");
 const path      = require("path");
 const http      = require("http");
 const { Server } = require("socket.io");
-
+const {
+  generalLimiter,
+  authLimiter,
+  postLimiter,
+  messageLimiter,
+  searchLimiter,
+  aiLimiter} = require("./middleware/rateLimiter");
 const app    = express();
 const server = http.createServer(app);
 const FRONTEND_URL = process.env.FRONTEND_URL ;
@@ -33,14 +39,26 @@ app.use(express.static(path.join(__dirname, "../frontend")));
 app.use((req, res, next) => { req.io = io; next(); });
 
 // ── API ROUTES ──
-app.use("/api/auth",     require("./routes/AuthRoutes"));
-app.use("/api/posts",    require("./routes/postRoutes"));
-app.use("/api/users",    require("./routes/userRoutes"));
-app.use("/api/messages", require("./routes/messageRoutes"));
-app.use("/api/notifications", require("./routes/notificationRoutes"));
-app.use("/api/recommend", require("./routes/recommendRoutes"));
-app.use("/api/events", require("./routes/eventRoutes"));
+// ── Apply general limiter to all API routes ──
+app.use("/api", generalLimiter);
 
+// ── Specific limiters on sensitive routes ──
+app.use("/api/auth",       authLimiter);
+
+app.use("/api/messages",    messageLimiter);
+app.use("/api/recommend",   aiLimiter);
+app.use("/api/users/search", searchLimiter);
+
+app.post("/api/posts", postLimiter);
+
+// ── Routes ──
+app.use("/api/auth",        require("./routes/AuthRoutes"));
+app.use("/api/posts",       require("./routes/postRoutes"));
+app.use("/api/users",       require("./routes/userRoutes"));
+app.use("/api/messages",    require("./routes/messageRoutes"));
+app.use("/api/notifications", require("./routes/notificationRoutes"));
+app.use("/api/events",      require("./routes/eventRoutes"));
+app.use("/api/recommend",   require("./routes/recommendRoutes"));
 // ── HEALTH CHECK ──
 app.get("/api", (req, res) => res.json({ status: "DrinkedIn API running 🍸" }));
 
