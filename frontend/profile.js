@@ -1,13 +1,12 @@
-const API_URL = `${BASE_URL}/api/posts`;
+const API_URL   = `${BASE_URL}/api/posts`;
 const API_POSTS = `${BASE_URL}/api/posts`;
 const API_USERS = `${BASE_URL}/api/users`;
 
 if (!localStorage.getItem("token")) window.location.href = "login.html";
 
-function getToken() { return localStorage.getItem("token"); }
+function getToken()    { return localStorage.getItem("token"); }
 function authHeaders() { return { "Authorization": "Bearer " + getToken() }; }
 
-// Check if viewing someone else's profile
 function getCurrentUser() {
   try { return JSON.parse(atob(getToken().split(".")[1])); }
   catch { return null; }
@@ -25,37 +24,34 @@ function isViewingOwnProfile() {
 }
 
 function triggerAvatarUpload() {
+  if (!isViewingOwnProfile()) return;
   openAvatarModal();
 }
 
-//   before DOMContentLoaded
 async function handleAvatarUpload(input) {
+  if (!isViewingOwnProfile()) return;
   const file = input.files[0];
   if (!file) return;
 
   const reader = new FileReader();
   reader.onload = e => {
-    document.querySelectorAll(".profile-avatar-xl, .nav-avatar,.sidebar-avatar, #editAvatarPreview")
+    document.querySelectorAll(".profile-avatar-xl, .nav-avatar, .sidebar-avatar, #editAvatarPreview")
       .forEach(img => img.src = e.target.result);
   };
   reader.readAsDataURL(file);
-
   showToast("Uploading… ☁️");
 
   try {
     const formData = new FormData();
     formData.append("avatar", file);
-
-    const res = await fetch(`${BASE_URL}/api/users/avatar`, {
-      method: "PUT",
+    const res  = await fetch(`${BASE_URL}/api/users/avatar`, {
+      method:  "PUT",
       headers: { "Authorization": "Bearer " + getToken() },
-      body: formData
+      body:    formData
     });
-
     const data = await res.json();
-
     if (res.ok) {
-      document.querySelectorAll(".profile-avatar-xl, .nav-avatar,.sidebar-avatar, #editAvatarPreview")
+      document.querySelectorAll(".profile-avatar-xl, .nav-avatar, .sidebar-avatar, #editAvatarPreview")
         .forEach(img => img.src = data.avatarUrl);
       showToast("Profile picture updated! 🎉");
     } else {
@@ -65,11 +61,9 @@ async function handleAvatarUpload(input) {
     console.error(err);
     showToast("Could not reach server.");
   }
-
   input.value = "";
 }
 
-// ... rest of your functions below
 function escapeHtml(text = "") {
   const d = document.createElement("div");
   d.textContent = text;
@@ -84,128 +78,34 @@ function showToast(msg) {
   clearTimeout(t._tid);
   t._tid = setTimeout(() => t.classList.remove("show"), 2600);
 }
-// ── GLOBAL USER SEARCH WITH SUGGESTIONS ──
-let searchTimeout;
 
-async function handleGlobalSearch(query) {
-  const dropdown = document.getElementById("searchDropdown");
-  if (!dropdown) return;
-
-  const q = query.trim();
-
-  if (!q) {
-    dropdown.innerHTML = "";
-    dropdown.classList.remove("open");
-    return;
-  }
-
-  // Show loading state
-  dropdown.innerHTML = `<div class="search-loading">🔍 Searching...</div>`;
-  dropdown.classList.add("open");
-
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(async () => {
-    try {
-      const res = await fetch(`${API_USERS}/search?q=${encodeURIComponent(q)}`, {
-        headers: authHeaders()
-      });
-      const users = await res.json();
-
-      if (!users.length) {
-        dropdown.innerHTML = `
-          <div class="search-no-results">
-            <span>😕</span>
-            <p>No users found for "<strong>${escapeHtml(q)}</strong>"</p>
-          </div>`;
-        return;
-      }
-
-      dropdown.innerHTML = "";
-
-      // Header
-      const header = document.createElement("div");
-      header.className = "search-dropdown-header";
-      header.textContent = `👥 Users matching "${q}"`;
-      dropdown.appendChild(header);
-
-      users.forEach(user => {
-        // Highlight matching part of username
-        const highlighted = highlightMatch(user.username, q);
-
-        const item = document.createElement("div");
-        item.className = "search-result-item";
-        item.innerHTML = `
-          <img src="${user.avatarUrl || `https://i.pravatar.cc/36?u=${encodeURIComponent(user.username)}`}"
-               alt="${escapeHtml(user.username)}"/>
-          <div class="search-result-info">
-            <strong>${highlighted}</strong>
-            <small>${escapeHtml(user.headline || "DrinkedIn Member")}</small>
-          </div>
-          <div class="search-result-meta">
-            <span>${user.followers?.length || 0} followers</span>
-          </div>
-        `;
-
-        // Click navigates to their profile
-        item.addEventListener("mousedown", (e) => {
-          e.preventDefault(); // prevent blur hiding dropdown
-          goToUserProfile(user._id, user.username);
-        });
-
-        dropdown.appendChild(item);
-      });
-
-      // Footer — search all
-      const footer = document.createElement("div");
-      footer.className = "search-dropdown-footer";
-      footer.innerHTML = `<span>Press Enter to search all results</span>`;
-      dropdown.appendChild(footer);
-
-    } catch (err) {
-      dropdown.innerHTML = `<div class="search-no-results">Error searching</div>`;
-    }
-  }, 250); // 250ms debounce — fast like Google
+function timeAgo(date) {
+  const diff = Math.floor((Date.now() - new Date(date)) / 1000);
+  if (diff < 60)     return "just now";
+  if (diff < 3600)   return Math.floor(diff / 60) + "m ago";
+  if (diff < 86400)  return Math.floor(diff / 3600) + "h ago";
+  if (diff < 604800) return Math.floor(diff / 86400) + "d ago";
+  if (diff < 2592000) return Math.floor(diff / 604800) + "w ago";
+  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-// ── HIGHLIGHT MATCHING TEXT ──
-function highlightMatch(text, query) {
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escaped})`, "gi");
-  return escapeHtml(text).replace(regex, `<mark class="search-highlight">$1</mark>`);
+function toggleTheme() {
+  const isLight = document.body.classList.toggle("light-mode");
+  localStorage.setItem("theme", isLight ? "light" : "dark");
+  updateThemeIcon();
 }
-
-// ── HIDE SEARCH RESULTS ──
-function hideSearchResults() {
-  setTimeout(() => {
-    const dropdown = document.getElementById("searchDropdown");
-    if (dropdown) {
-      dropdown.classList.remove("open");
-      dropdown.innerHTML = "";
-    }
-  }, 150);
+function updateThemeIcon() {
+  const btn = document.getElementById("themeToggle");
+  if (btn) btn.textContent = document.body.classList.contains("light-mode") ? "🌙" : "☀️";
 }
-
-// ── GO TO USER PROFILE ──
-function goToUserProfile(userId, username) {
-  // Store target user and go to profile page
-  sessionStorage.setItem("viewingUser", JSON.stringify({ userId, username }));
-  window.location.href = `profile.html?user=${userId}`;
-
-  const dropdown = document.getElementById("searchDropdown");
-  if (dropdown) { dropdown.classList.remove("open"); dropdown.innerHTML = ""; }
-
-  const input = document.getElementById("globalSearchInput");
-  if (input) input.value = "";
+function loadTheme() {
+  if (localStorage.getItem("theme") === "light") document.body.classList.add("light-mode");
+  updateThemeIcon();
 }
-
-// ── ENTER KEY — search in explore ──
-document.addEventListener("keydown", e => {
-  const input = document.getElementById("globalSearchInput");
-  if (e.key === "Enter" && document.activeElement === input) {
-    const q = input.value.trim();
-    if (q) window.location.href = `explore.html?search=${encodeURIComponent(q)}`;
-  }
-});
+function logout() {
+  localStorage.removeItem("token");
+  window.location.href = "login.html";
+}
 
 function resetSessionTimer() {
   localStorage.setItem("sessionExpiry", Date.now() + (3 * 60 * 60 * 1000));
@@ -218,165 +118,174 @@ function checkSessionExpiry() {
     window.location.href = "login.html";
   }
 }
-function timeAgo(date) {
-  const diff = Math.floor((Date.now() - new Date(date)) / 1000);
-  if (diff < 60) return "just now";
-  if (diff < 3600) return Math.floor(diff / 60) + "m ago";
-  if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
-  if (diff < 604800) return Math.floor(diff / 86400) + "d ago";
-  if (diff < 2592000) return Math.floor(diff / 604800) + "w ago";
-  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+// ── GLOBAL SEARCH ──
+let searchTimeout;
+async function handleGlobalSearch(query) {
+  const dropdown = document.getElementById("searchDropdown");
+  if (!dropdown) return;
+  const q = query.trim();
+  if (!q) { dropdown.innerHTML = ""; dropdown.classList.remove("open"); return; }
+
+  dropdown.innerHTML = `<div class="search-loading">🔍 Searching...</div>`;
+  dropdown.classList.add("open");
+  clearTimeout(searchTimeout);
+
+  searchTimeout = setTimeout(async () => {
+    try {
+      const res   = await fetch(`${API_USERS}/search?q=${encodeURIComponent(q)}`, { headers: authHeaders() });
+      const users = await res.json();
+
+      if (!users.length) {
+        dropdown.innerHTML = `<div class="search-no-results"><span>😕</span><p>No users found for "<strong>${escapeHtml(q)}</strong>"</p></div>`;
+        return;
+      }
+
+      dropdown.innerHTML = "";
+      const header = document.createElement("div");
+      header.className   = "search-dropdown-header";
+      header.textContent = `👥 Users matching "${q}"`;
+      dropdown.appendChild(header);
+
+      users.forEach(user => {
+        const item     = document.createElement("div");
+        item.className = "search-result-item";
+        item.innerHTML = `
+          <img src="${user.avatarUrl || `https://i.pravatar.cc/36?u=${encodeURIComponent(user.username)}`}" alt="${escapeHtml(user.username)}"/>
+          <div class="search-result-info">
+            <strong>${highlightMatch(user.username, q)}</strong>
+            <small>${escapeHtml(user.headline || "DrinkedIn Member")}</small>
+          </div>
+          <div class="search-result-meta"><span>${user.followers?.length || 0} followers</span></div>
+        `;
+        item.addEventListener("mousedown", e => { e.preventDefault(); goToUserProfile(user._id, user.username); });
+        dropdown.appendChild(item);
+      });
+
+      const footer = document.createElement("div");
+      footer.className  = "search-dropdown-footer";
+      footer.innerHTML  = `<span>Press Enter to search all results</span>`;
+      dropdown.appendChild(footer);
+    } catch {
+      dropdown.innerHTML = `<div class="search-no-results">Error searching</div>`;
+    }
+  }, 250);
 }
 
-function toggleTheme() {
-  const isLight = document.body.classList.toggle("light-mode");
-  localStorage.setItem("theme", isLight ? "light" : "dark");
-  updateThemeIcon();
+function highlightMatch(text, query) {
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return escapeHtml(text).replace(new RegExp(`(${escaped})`, "gi"), `<mark class="search-highlight">$1</mark>`);
 }
-
-function updateThemeIcon() {
-  const btn = document.getElementById("themeToggle");
-  const isLight = document.body.classList.contains("light-mode");
-  if (btn) btn.textContent = isLight ? "🌙" : "☀️";
+function hideSearchResults() {
+  setTimeout(() => {
+    const d = document.getElementById("searchDropdown");
+    if (d) { d.classList.remove("open"); d.innerHTML = ""; }
+  }, 150);
 }
-
-function loadTheme() {
-  const saved = localStorage.getItem("theme");
-  if (saved === "light") document.body.classList.add("light-mode");
-  updateThemeIcon();
+function goToUserProfile(userId, username) {
+  window.location.href = `profile.html?user=${userId}`;
+  const d = document.getElementById("searchDropdown");
+  if (d) { d.classList.remove("open"); d.innerHTML = ""; }
+  const inp = document.getElementById("globalSearchInput");
+  if (inp) inp.value = "";
 }
+document.addEventListener("keydown", e => {
+  const inp = document.getElementById("globalSearchInput");
+  if (e.key === "Enter" && document.activeElement === inp) {
+    const q = inp.value.trim();
+    if (q) window.location.href = `explore.html?search=${encodeURIComponent(q)}`;
+  }
+});
 
-function logout() {
-  localStorage.removeItem("token");
-  window.location.href = "login.html";
-}
-// ── AVATAR PICKER STATE ──
-let selectedDefaultAvatar = null; // 'male' or 'female'
-let selectedCustomFile = null;
-
+// ── AVATAR PICKER ──
+let selectedDefaultAvatar = null;
+let selectedCustomFile    = null;
 const DEFAULT_AVATARS = {
-  male: "https://i.pinimg.com/736x/8e/40/f8/8e40f83a0f6b6f2e66803af56507b05d.jpg",
+  male:   "https://i.pinimg.com/736x/8e/40/f8/8e40f83a0f6b6f2e66803af56507b05d.jpg",
   female: "https://i.pinimg.com/736x/72/4b/a5/724ba58551a3e4c577110ab10395508d.jpg"
 };
 
 function openAvatarModal() {
+  if (!isViewingOwnProfile()) return;
   selectedDefaultAvatar = null;
-  selectedCustomFile = null;
-
-  // Clear state
+  selectedCustomFile    = null;
   document.querySelectorAll(".avatar-option").forEach(o => o.classList.remove("selected"));
   const preview = document.getElementById("avatarUploadPreview");
   if (preview) preview.innerHTML = "";
   const fileInput = document.getElementById("avatarModalInput");
   if (fileInput) fileInput.value = "";
-
   document.getElementById("avatarPickerModal").classList.add("open");
   document.body.style.overflow = "hidden";
 }
-
 function closeAvatarModal() {
   document.getElementById("avatarPickerModal").classList.remove("open");
   document.body.style.overflow = "";
 }
-
 function selectDefaultAvatar(type, el) {
   selectedDefaultAvatar = type;
-  selectedCustomFile = null;
-
-  // Clear file preview
+  selectedCustomFile    = null;
   const preview = document.getElementById("avatarUploadPreview");
   if (preview) preview.innerHTML = "";
   const fileInput = document.getElementById("avatarModalInput");
   if (fileInput) fileInput.value = "";
-
-  // Highlight selected
   document.querySelectorAll(".avatar-option").forEach(o => o.classList.remove("selected"));
   el.classList.add("selected");
-
-  // Show preview on profile instantly
   const url = DEFAULT_AVATARS[type];
-  document.querySelectorAll(".profile-avatar-xl, .nav-avatar, .sidebar-avatar, #editAvatarPreview, #mainAvatar")
+  document.querySelectorAll(".profile-avatar-xl, #editAvatarPreview, #mainAvatar")
     .forEach(img => img.src = url);
 }
-
 function handleAvatarUploadFromModal(input) {
   const file = input.files[0];
   if (!file) return;
-
-  selectedCustomFile = file;
+  selectedCustomFile    = file;
   selectedDefaultAvatar = null;
-
-  // Clear default selection
   document.querySelectorAll(".avatar-option").forEach(o => o.classList.remove("selected"));
-
-  // Show preview
   const reader = new FileReader();
   reader.onload = e => {
     const preview = document.getElementById("avatarUploadPreview");
-    if (preview) {
-      preview.innerHTML = `
-        <div class="img-preview-wrap">
-          <img src="${e.target.result}" alt="preview" style="max-height:120px"/>
-        </div>`;
-    }
-    // Live preview on profile
-    document.querySelectorAll(".profile-avatar-xl, .nav-avatar, .sidebar-avatar, #editAvatarPreview, #mainAvatar")
+    if (preview) preview.innerHTML = `<div class="img-preview-wrap"><img src="${e.target.result}" alt="preview" style="max-height:120px"/></div>`;
+    document.querySelectorAll(".profile-avatar-xl, #editAvatarPreview, #mainAvatar")
       .forEach(img => img.src = e.target.result);
   };
   reader.readAsDataURL(file);
 }
-
 async function saveSelectedAvatar() {
+  if (!isViewingOwnProfile()) return;
   const btn = document.getElementById("saveAvatarBtn");
-
-  if (!selectedDefaultAvatar && !selectedCustomFile) {
-    showToast("Please select or upload an avatar first");
-    return;
-  }
-
+  if (!selectedDefaultAvatar && !selectedCustomFile) { showToast("Please select or upload an avatar first"); return; }
   if (btn) { btn.disabled = true; btn.textContent = "Saving…"; }
 
   try {
     if (selectedCustomFile) {
-      // ── Upload custom photo to Cloudinary ──
       const formData = new FormData();
       formData.append("avatar", selectedCustomFile);
-
-      const res = await fetch(`${API_USERS}/avatar`, {
-        method: "PUT",
+      const res  = await fetch(`${API_USERS}/avatar`, {
+        method:  "PUT",
         headers: { "Authorization": "Bearer " + getToken() },
-        body: formData
+        body:    formData
       });
       const data = await res.json();
-
       if (res.ok) {
-        document.querySelectorAll(".profile-avatar-xl, .nav-avatar, .sidebar-avatar, #editAvatarPreview, #mainAvatar")
+        document.querySelectorAll(".profile-avatar-xl, .nav-avatar, #editAvatarPreview, #mainAvatar")
           .forEach(img => img.src = data.avatarUrl);
         showToast("Profile picture updated! 🎉");
         closeAvatarModal();
-      } else {
-        showToast(data.msg || "Upload failed");
-      }
+      } else { showToast(data.msg || "Upload failed"); }
 
     } else if (selectedDefaultAvatar) {
-      // ── Save default avatar URL directly ──
-      const url = DEFAULT_AVATARS[selectedDefaultAvatar];
-
-      const res = await fetch(`${API_USERS}/avatar-url`, {
-        method: "PUT",
+      const url  = DEFAULT_AVATARS[selectedDefaultAvatar];
+      const res  = await fetch(`${API_USERS}/avatar-url`, {
+        method:  "PUT",
         headers: { ...authHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify({ avatarUrl: url, avatarType: selectedDefaultAvatar })
+        body:    JSON.stringify({ avatarUrl: url, avatarType: selectedDefaultAvatar })
       });
       const data = await res.json();
-
       if (res.ok) {
-        document.querySelectorAll(".profile-avatar-xl, .nav-avatar, .sidebar-avatar, #editAvatarPreview, #mainAvatar")
+        document.querySelectorAll(".profile-avatar-xl, .nav-avatar, #editAvatarPreview, #mainAvatar")
           .forEach(img => img.src = url);
         showToast("Avatar updated! 🎉");
         closeAvatarModal();
-      } else {
-        showToast(data.msg || "Error saving avatar");
-      }
+      } else { showToast(data.msg || "Error saving avatar"); }
     }
   } catch (err) {
     console.error(err);
@@ -386,20 +295,15 @@ async function saveSelectedAvatar() {
   }
 }
 
+// ── LOAD PROFILE ──
 async function loadProfile() {
   try {
-    const me          = getCurrentUser();
-    const viewingId   = getViewingUserId();
+    const me           = getCurrentUser();
+    const viewingId    = getViewingUserId();
     const isOwnProfile = isViewingOwnProfile();
 
-    // Fetch user info
-    const userUrl = isOwnProfile
-      ? `${API_USERS}/me`
-      : `${API_USERS}/${viewingId}`;
-
-    const postsUrl = isOwnProfile
-      ? `${API_POSTS}/my-posts`
-      : `${API_POSTS}/user/${viewingId}`;
+    const userUrl  = isOwnProfile ? `${API_USERS}/me`              : `${API_USERS}/${viewingId}`;
+    const postsUrl = isOwnProfile ? `${API_POSTS}/my-posts`        : `${API_POSTS}/user/${viewingId}`;
 
     const [userRes, postsRes] = await Promise.all([
       fetch(userUrl,  { headers: authHeaders() }),
@@ -408,10 +312,9 @@ async function loadProfile() {
 
     const user      = await userRes.json();
     const postsData = await postsRes.json();
-
     if (!userRes.ok) return;
 
-    // ── Update fields ──
+    // ── Fields ──
     const nameEl      = document.getElementById("username");
     const headlineEl  = document.getElementById("profileHeadline");
     const locationEl  = document.getElementById("profileLocation");
@@ -420,31 +323,63 @@ async function loadProfile() {
     const followerEl  = document.getElementById("followerCount");
     const followingEl = document.getElementById("followingCount");
 
-    if (nameEl)      nameEl.textContent      = user.username     || "Unknown";
-    if (headlineEl)  headlineEl.textContent  = user.headline     || "";
+    if (nameEl)      nameEl.textContent      = user.username || "Unknown";
+    if (headlineEl)  headlineEl.textContent  = user.headline || "";
     if (locationEl)  locationEl.textContent  = user.location ? "📍 " + user.location : "";
-    if (bioEl)       bioEl.textContent       = user.bio          || "";
+    if (bioEl)       bioEl.textContent       = user.bio      || "";
     if (totalEl)     totalEl.textContent     = postsData.totalPosts || 0;
     if (followerEl)  followerEl.textContent  = user.followers?.length  || 0;
     if (followingEl) followingEl.textContent = user.following?.length  || 0;
 
     // ── Avatar ──
-   if (user.avatarUrl) {
-  if (isOwnProfile) {
-    // Own profile — update hero + navbar + edit preview
-    document.querySelectorAll(".profile-avatar-xl, .nav-avatar, #editAvatarPreview, #mainAvatar")
-      .forEach(img => img.src = user.avatarUrl);
-  } else {
-    // Other user — ONLY update hero avatar, never navbar
-    const heroAvatar = document.querySelector(".profile-avatar-xl");
-    if (heroAvatar) heroAvatar.src = user.avatarUrl;
-    const mainAvatar = document.getElementById("mainAvatar");
-    if (mainAvatar) mainAvatar.src = user.avatarUrl;
-  }
-}
+    if (user.avatarUrl) {
+      if (isOwnProfile) {
+        document.querySelectorAll(".profile-avatar-xl, .nav-avatar, #editAvatarPreview, #mainAvatar")
+          .forEach(img => img.src = user.avatarUrl);
+      } else {
+        // Other user — ONLY hero avatar, never navbar
+        const heroAvatar = document.querySelector(".profile-avatar-xl");
+        if (heroAvatar) heroAvatar.src = user.avatarUrl;
+        const mainAvatar = document.getElementById("mainAvatar");
+        if (mainAvatar) mainAvatar.src = user.avatarUrl;
+      }
+    }
+
+    // ── Own vs other profile controls ──
+    if (!isOwnProfile) {
+      document.querySelectorAll(".own-only").forEach(el => el.style.display = "none");
+      const avatarXl = document.querySelector(".profile-avatar-xl");
+      if (avatarXl) { avatarXl.style.cursor = "default"; avatarXl.onclick = null; }
+
+      const actionBtns = document.getElementById("profileActionBtns");
+      if (actionBtns) {
+        const isFollowing = user.followers?.includes(me?.userId);
+        actionBtns.innerHTML = `
+          <button class="btn-primary ${isFollowing ? "following" : ""}"
+                  id="profileFollowBtn"
+                  onclick="followFromProfile('${user._id}', this)">
+            ${isFollowing ? "🍻 Following" : "+ Follow"}
+          </button>
+          <button class="btn-outline"
+                  onclick="window.location='messages.html?user=${user._id}&username=${encodeURIComponent(user.username)}'">
+            💬 Message
+          </button>
+        `;
+      }
+
+      // Block all edit functions
+      window.openEditModal       = () => {};
+      window.openAvatarModal     = () => {};
+      window.triggerAvatarUpload = () => {};
+
+      const savedTab = document.querySelector(".profile-tab[onclick*='saved']");
+      if (savedTab) savedTab.style.display = "none";
+    } else {
+      document.querySelectorAll(".own-only").forEach(el => el.style.display = "");
+    }
 
     // ── Render posts ──
-    renderMyPosts(postsData.posts || []);
+    renderMyPosts(postsData.posts || [], isOwnProfile);
 
     // ── About list ──
     const aboutList = document.getElementById("aboutList");
@@ -459,55 +394,62 @@ async function loadProfile() {
     showToast("Could not load profile.");
   }
 }
+
 async function loadNavAvatar() {
   try {
     const res  = await fetch(`${API_USERS}/me`, { headers: authHeaders() });
     const user = await res.json();
     if (!res.ok) return;
     if (user.avatarUrl) {
-      // ONLY navbar avatar 
-      document.querySelectorAll(".nav-avatar")
-        .forEach(img => img.src = user.avatarUrl);
+      document.querySelectorAll(".nav-avatar").forEach(img => img.src = user.avatarUrl);
     }
   } catch {}
 }
-function renderMyPosts(posts) {
+
+// ── RENDER POSTS ──
+function renderMyPosts(posts, isOwnProfile = true) {
   const container = document.getElementById("myPosts");
   if (!container) return;
   container.innerHTML = "";
 
-  if (posts.length === 0) {
+  if (!posts.length) {
     container.innerHTML = `
       <div class="empty-state">
         <span class="empty-icon">🍸</span>
         <h3>No pours yet</h3>
-        <p>Go to the feed and share your first drinking experience!</p>
-        <a href="index.html" class="btn-primary">Go to Feed</a>
+        <p>${isOwnProfile ? "Go to the feed and share your first drinking experience!" : "This user hasn't posted yet."}</p>
+        ${isOwnProfile ? `<a href="index.html" class="btn-primary">Go to Feed</a>` : ""}
       </div>`;
     return;
   }
 
   posts.forEach((post, i) => {
-    const el = document.createElement("div");
+    const el     = document.createElement("div");
     el.className = "post-card";
     el.style.animationDelay = (i * 0.06) + "s";
 
-    // ── IMAGE ──
     const imageHTML = post.imageUrl ? `
       <div class="post-image-wrap">
-        <img src="${post.imageUrl}"
-             class="post-image"
-             alt="post image"
-             loading="lazy"
+        <img src="${post.imageUrl}" class="post-image" alt="post image" loading="lazy"
              onerror="this.parentElement.style.display='none'"
              onclick="openLightbox('${post.imageUrl}')"/>
       </div>` : "";
 
-    // ── TAGS ──
     const tagsHTML = (post.tags && post.tags.length) ? `
       <div class="post-tags-row">
         ${post.tags.map(t => `<span class="post-tag">#${escapeHtml(t)}</span>`).join("")}
       </div>` : "";
+
+    // ── Only show edit/delete on OWN profile ──
+    const actionsHTML = isOwnProfile ? `
+      <span class="action-btn">🥂 ${post.upvotes || 0} Cheers</span>
+      <span class="action-btn">💬 ${(post.comments || []).length} Comments</span>
+      <button class="action-btn owner-btn" onclick="editMyPost('${post._id}', this)">✏️ Edit</button>
+      <button class="action-btn owner-btn del-btn" onclick="deleteMyPost('${post._id}')">🗑️ Delete</button>
+    ` : `
+      <span class="action-btn">🥂 ${post.upvotes || 0} Cheers</span>
+      <span class="action-btn">💬 ${(post.comments || []).length} Comments</span>
+    `;
 
     el.innerHTML = `
       <div class="post-header">
@@ -518,19 +460,11 @@ function renderMyPosts(posts) {
           <small>${timeAgo(post.createdAt)}</small>
         </div>
       </div>
-      <div class="post-body">
-        <p>${escapeHtml(post.story)}</p>
-      </div>
+      <div class="post-body"><p>${escapeHtml(post.story)}</p></div>
       ${imageHTML}
       ${tagsHTML}
-      <div class="post-actions">
-        <span class="action-btn">🥂 ${post.upvotes || 0} Cheers</span>
-        <span class="action-btn">💬 ${(post.comments || []).length} Comments</span>
-        <button class="action-btn owner-btn" onclick="editMyPost('${post._id}', this)">✏️ Edit</button>
-        <button class="action-btn owner-btn del-btn" onclick="deleteMyPost('${post._id}')">🗑️ Delete</button>
-      </div>
+      <div class="post-actions">${actionsHTML}</div>
     `;
-
     container.appendChild(el);
   });
 }
@@ -539,13 +473,9 @@ function openLightbox(url) {
   let lb = document.getElementById("lightbox");
   if (!lb) {
     lb = document.createElement("div");
-    lb.id = "lightbox";
+    lb.id        = "lightbox";
     lb.className = "lightbox";
-    lb.innerHTML = `
-      <div class="lightbox-inner">
-        <button class="lb-close" onclick="closeLightbox()">✕</button>
-        <img id="lb-img" src="" alt=""/>
-      </div>`;
+    lb.innerHTML = `<div class="lightbox-inner"><button class="lb-close" onclick="closeLightbox()">✕</button><img id="lb-img" src="" alt=""/></div>`;
     lb.addEventListener("click", e => { if (e.target === lb) closeLightbox(); });
     document.body.appendChild(lb);
   }
@@ -553,7 +483,6 @@ function openLightbox(url) {
   lb.classList.add("open");
   document.body.style.overflow = "hidden";
 }
-
 function closeLightbox() {
   const lb = document.getElementById("lightbox");
   if (lb) lb.classList.remove("open");
@@ -561,235 +490,170 @@ function closeLightbox() {
 }
 
 async function deleteMyPost(id) {
+  if (!isViewingOwnProfile()) return;
   if (!confirm("Delete this post?")) return;
   try {
-    const res = await fetch(`${API_URL}/${id}`, {
-      method: "DELETE",
-      headers: { "Authorization": "Bearer " + getToken() }
-    });
+    const res = await fetch(`${API_URL}/${id}`, { method: "DELETE", headers: { "Authorization": "Bearer " + getToken() } });
     if (res.ok) { showToast("Deleted 🗑️"); loadProfile(); }
     else { const d = await res.json(); showToast(d.msg || "Error"); }
   } catch { showToast("Server error."); }
 }
 
 async function editMyPost(id, btn) {
-  const p = btn.closest(".post-card")?.querySelector(".post-body p");
-  const old = p ? p.textContent : "";
+  if (!isViewingOwnProfile()) return;
+  const p       = btn.closest(".post-card")?.querySelector(".post-body p");
+  const old     = p ? p.textContent : "";
   const newText = prompt("Edit your post:", old);
   if (!newText || newText.trim() === old) return;
-
   try {
     const res = await fetch(`${API_URL}/${id}`, {
-      method: "PUT",
+      method:  "PUT",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + getToken() },
-      body: JSON.stringify({ story: newText.trim() })
+      body:    JSON.stringify({ story: newText.trim() })
     });
     if (res.ok) { if (p) p.textContent = newText.trim(); showToast("Updated ✅"); }
     else { const d = await res.json(); showToast(d.msg || "Error"); }
   } catch { showToast("Server error."); }
 }
 
-// ── OPEN / CLOSE EDIT MODAL ──
+// ── EDIT PROFILE MODAL ──
 function openEditModal() {
-  // Pre-fill fields with current values from the page
-  const nameEl = document.getElementById("username");
+  if (!isViewingOwnProfile()) return;
+  const nameEl     = document.getElementById("username");
   const headlineEl = document.getElementById("profileHeadline");
   const locationEl = document.getElementById("profileLocation");
-  const bioEl = document.getElementById("profileBio");
+  const bioEl      = document.getElementById("profileBio");
 
   const editUsername = document.getElementById("editUsername");
   const editHeadline = document.getElementById("editHeadline");
   const editLocation = document.getElementById("editLocation");
-  const editBio = document.getElementById("editBio");
+  const editBio      = document.getElementById("editBio");
 
-  if (editUsername && nameEl) editUsername.value = nameEl.textContent.trim();
+  if (editUsername && nameEl)     editUsername.value = nameEl.textContent.trim();
   if (editHeadline && headlineEl) editHeadline.value = headlineEl.textContent.trim();
   if (editLocation && locationEl) editLocation.value = locationEl.textContent.replace("📍", "").trim();
-  if (editBio && bioEl) editBio.value = bioEl.textContent.trim();
+  if (editBio && bioEl)           editBio.value      = bioEl.textContent.trim();
 
-  // Sync avatar preview inside modal
-  const mainAvatar = document.querySelector(".profile-avatar-xl");
+  const mainAvatar  = document.querySelector(".profile-avatar-xl");
   const editPreview = document.getElementById("editAvatarPreview");
   if (mainAvatar && editPreview) editPreview.src = mainAvatar.src;
 
   document.getElementById("editProfileModal").classList.add("open");
   document.body.style.overflow = "hidden";
 }
-
 function closeEditModal() {
   document.getElementById("editProfileModal").classList.remove("open");
   document.body.style.overflow = "";
 }
 
-// ── SAVE PROFILE ──
 async function saveProfile() {
+  if (!isViewingOwnProfile()) return;
   const username = document.getElementById("editUsername")?.value.trim();
   const headline = document.getElementById("editHeadline")?.value.trim();
   const location = document.getElementById("editLocation")?.value.trim();
-  const bio = document.getElementById("editBio")?.value.trim();
-
+  const bio      = document.getElementById("editBio")?.value.trim();
 
   if (!username) { showToast("Username can't be empty"); return; }
 
   try {
-    const res = await fetch(`${BASE_URL}/api/users/update-profile`, {
-      method: "PUT",
-      headers: {
-        "Authorization": "Bearer " + getToken(),
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ username, headline, location, bio })
+    const res  = await fetch(`${BASE_URL}/api/users/update-profile`, {
+      method:  "PUT",
+      headers: { "Authorization": "Bearer " + getToken(), "Content-Type": "application/json" },
+      body:    JSON.stringify({ username, headline, location, bio })
     });
     const data = await res.json();
-    if (data.token) localStorage.setItem("token", data.token); // Update token if username changed
+    if (data.token) localStorage.setItem("token", data.token);
+    if (!res.ok)    { showToast(data.msg || "Error saving"); return; }
 
-    if (!res.ok) { showToast(data.msg || "Error saving"); return; }
-
-    // Update page instantly without reload
-    const nameEl = document.getElementById("username");
+    const nameEl     = document.getElementById("username");
     const headlineEl = document.getElementById("profileHeadline");
     const locationEl = document.getElementById("profileLocation");
-    const bioEl = document.getElementById("profileBio");
+    const bioEl      = document.getElementById("profileBio");
 
-    if (nameEl) nameEl.textContent = username;
+    if (nameEl)     nameEl.textContent     = username;
     if (headlineEl) headlineEl.textContent = headline;
-    if (locationEl) locationEl.textContent = "📍 " + location;
-    if (bioEl) bioEl.textContent = bio;
+    if (locationEl) locationEl.textContent = location ? "📍 " + location : "";
+    if (bioEl)      bioEl.textContent      = bio;
 
-    // Add after: if (nameEl) nameEl.textContent = user.username || "Unknown";
-    const followerEl = document.getElementById("followerCount");
-    const followingEl = document.getElementById("followingCount");
-    if (followerEl) followerEl.textContent = user.followers?.length || 0;
-    if (followingEl) followingEl.textContent = user.following?.length || 0;
-
-    // Update nav avatar username too
     document.querySelectorAll(".current-username").forEach(el => el.textContent = username);
-
     showToast("Profile updated! ✅");
     closeEditModal();
-    if (username) {
-      showToast("Profile updated! Re-login to see username changes in posts/comments. ✅");
-    }
-
   } catch { showToast("Could not reach server."); }
 }
 
+// ── SHARE PROFILE ──
+function shareProfile() {
+  const viewingId = getViewingUserId();
+  const me        = getCurrentUser();
+  const userId    = viewingId || me?.userId;
+  const url       = `${window.location.origin}/profile.html?user=${userId}`;
 
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => showToast("Profile link copied! 🔗")).catch(() => fallbackCopy(url));
+  } else { fallbackCopy(url); }
+}
+function fallbackCopy(text) {
+  const el = document.createElement("textarea");
+  el.value = text; el.style.position = "fixed"; el.style.opacity = "0";
+  document.body.appendChild(el); el.select(); document.execCommand("copy");
+  document.body.removeChild(el); showToast("Profile link copied! 🔗");
+}
 
-document.addEventListener("DOMContentLoaded", async () => {
-  loadTheme();
-  await loadProfile();
-  await loadNavAvatar();
-  resetSessionTimer();
-  checkSessionExpiry();
+// ── FOLLOW FROM PROFILE ──
+async function followFromProfile(targetId, btn) {
+  try {
+    const res  = await fetch(`${API_USERS}/follow/${targetId}`, { method: "PUT", headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.msg || "Error"); return; }
+    const isFollowing = data.following;
+    btn.textContent   = isFollowing ? "🍻 Following" : "+ Follow";
+    btn.classList.toggle("following", isFollowing);
+    const followerEl = document.getElementById("followerCount");
+    if (followerEl) followerEl.textContent = data.followerCount;
+    showToast(isFollowing ? "Following! 🍻" : "Unfollowed");
+  } catch { showToast("Could not reach server."); }
+}
 
-
-  // 👇 attach here instead of inline HTML
-  const avatarInput = document.getElementById("avatarInput");
-  if (avatarInput) {
-    avatarInput.addEventListener("change", function () {
-      handleAvatarUpload(this);
-    });
-  }
-});
-
-// ── FOLLOWERS / FOLLOWING MODAL ──
+// ── FOLLOWERS/FOLLOWING MODAL ──
 async function openFollowModal(type) {
   const title = document.getElementById("followModalTitle");
-  const list = document.getElementById("followModalList");
+  const list  = document.getElementById("followModalList");
   if (!title || !list) return;
-
   title.textContent = type === "followers" ? "Followers" : "Following";
-  list.innerHTML = "<p style='color:var(--text-muted);font-size:13px'>Loading…</p>";
-
+  list.innerHTML    = "<p style='color:var(--text-muted);font-size:13px'>Loading…</p>";
   document.getElementById("followModal").classList.add("open");
   document.body.style.overflow = "hidden";
 
   try {
-    const res = await fetch(`${API_USERS}/${type}`, { headers: authHeaders() });
+    const res   = await fetch(`${API_USERS}/${type}`, { headers: authHeaders() });
     const users = await res.json();
-
     if (!res.ok || !users.length) {
-      list.innerHTML = `<p style='color:var(--text-muted);font-size:13px;text-align:center'>
-        No ${type} yet 🍸</p>`;
+      list.innerHTML = `<p style='color:var(--text-muted);font-size:13px;text-align:center'>No ${type} yet 🍸</p>`;
       return;
     }
-
     list.innerHTML = "";
     users.forEach(user => {
-      const item = document.createElement("div");
+      const item     = document.createElement("div");
       item.className = "follow-user-item";
       item.innerHTML = `
-        <img src="${user.avatarUrl || `https://i.pravatar.cc/40?u=${encodeURIComponent(user.username)}`}"
-             alt="${escapeHtml(user.username)}"/>
-        <div>
-          <strong>${escapeHtml(user.username)}</strong>
-          <small>${escapeHtml(user.headline || "DrinkedIn Member")}</small>
-        </div>
+        <img src="${user.avatarUrl || `https://i.pravatar.cc/40?u=${encodeURIComponent(user.username)}`}" alt="${escapeHtml(user.username)}"/>
+        <div><strong>${escapeHtml(user.username)}</strong><small>${escapeHtml(user.headline || "DrinkedIn Member")}</small></div>
       `;
+      item.style.cursor = "pointer";
+      item.onclick = () => goToUserProfile(user._id, user.username);
       list.appendChild(item);
     });
-  } catch {
-    list.innerHTML = "<p style='color:var(--text-muted)'>Could not load list.</p>";
-  }
+  } catch { list.innerHTML = "<p style='color:var(--text-muted)'>Could not load list.</p>"; }
 }
-async function followFromProfile(targetId, btn) {
-  try {
-    const res  = await fetch(`${API_USERS}/follow/${targetId}`, {
-      method:  "PUT",
-      headers: authHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) { showToast(data.msg || "Error"); return; }
-
-    const isFollowing = data.following;
-    btn.textContent   = isFollowing ? "🍻 Following" : "+ Follow";
-    btn.classList.toggle("following", isFollowing);
-
-    // Update follower count
-    const followerEl = document.getElementById("followerCount");
-    if (followerEl) followerEl.textContent = data.followerCount;
-
-    showToast(isFollowing ? "Following! 🍻" : "Unfollowed");
-  } catch {
-    showToast("Could not reach server.");
-  }
-}
-function shareProfile() {
-  const me = getCurrentUser();
-  const url = `${window.location.origin}/profile.html?user=${me?.userId}`;
-
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(url).then(() => {
-      showToast("Profile link copied! 🔗");
-    }).catch(() => {
-      fallbackCopy(url);
-    });
-  } else {
-    fallbackCopy(url);
-  }
-}
-
-function fallbackCopy(text) {
-  const el = document.createElement("textarea");
-  el.value = text;
-  el.style.position = "fixed";
-  el.style.opacity = "0";
-  document.body.appendChild(el);
-  el.select();
-  document.execCommand("copy");
-  document.body.removeChild(el);
-  showToast("Profile link copied! 🔗");
-}
-
 function closeFollowModal() {
   document.getElementById("followModal").classList.remove("open");
   document.body.style.overflow = "";
 }
 
+// ── SAVED POSTS ──
 async function loadSavedPosts() {
   try {
-    const res = await fetch(`${API_USERS}/saved-posts`, { headers: authHeaders() });
+    const res   = await fetch(`${API_USERS}/saved-posts`, { headers: authHeaders() });
     const posts = await res.json();
     if (!res.ok) return;
 
@@ -809,25 +673,14 @@ async function loadSavedPosts() {
 
     container.innerHTML = "";
     posts.forEach(post => {
-      const imageHTML = post.imageUrl ? `
-        <div class="post-image-wrap">
-          <img src="${post.imageUrl}" class="post-image" alt="post" loading="lazy"/>
-        </div>` : "";
-
-      const tagsHTML = (post.tags || []).map(t =>
-        `<span class="post-tag">#${t}</span>`
-      ).join("");
-
-      const el = document.createElement("div");
-      el.className = "post-card";
-      el.innerHTML = `
+      const imageHTML = post.imageUrl ? `<div class="post-image-wrap"><img src="${post.imageUrl}" class="post-image" alt="post" loading="lazy"/></div>` : "";
+      const tagsHTML  = (post.tags || []).map(t => `<span class="post-tag">#${t}</span>`).join("");
+      const el        = document.createElement("div");
+      el.className    = "post-card";
+      el.innerHTML    = `
         <div class="post-header">
-          <img src="${post.avatarUrl || `https://i.pravatar.cc/46?u=${encodeURIComponent(post.username)}`}"
-               class="post-avatar" alt="${escapeHtml(post.username)}"/>
-          <div class="post-meta">
-            <strong>${escapeHtml(post.username)}</strong>
-            <small>${timeAgo(post.createdAt)}</small>
-          </div>
+          <img src="${post.avatarUrl || `https://i.pravatar.cc/46?u=${encodeURIComponent(post.username)}`}" class="post-avatar" alt="${escapeHtml(post.username)}"/>
+          <div class="post-meta"><strong>${escapeHtml(post.username)}</strong><small>${timeAgo(post.createdAt)}</small></div>
         </div>
         <div class="post-body"><p>${escapeHtml(post.story)}</p></div>
         ${imageHTML}
@@ -835,27 +688,40 @@ async function loadSavedPosts() {
         <div class="post-actions">
           <span class="action-btn">🥂 ${post.upvotes || 0} Cheers</span>
           <span class="action-btn">💬 ${(post.comments || []).length} Comments</span>
-          <button class="action-btn del-btn" onclick="unsavePost('${post._id}', this)">🔖 Unsave</button>
+          <button class="action-btn del-btn" onclick="unsavePost('${post._id}')">🔖 Unsave</button>
         </div>
       `;
       container.appendChild(el);
     });
-  } catch (err) {
-    console.error(err);
-  }
+  } catch (err) { console.error(err); }
 }
 
-async function unsavePost(postId, btn) {
+async function unsavePost(postId) {
   try {
-    const res = await fetch(`${API_USERS}/save/${postId}`, {
-      method: "PUT",
-      headers: authHeaders()
-    });
-    if (res.ok) {
-      showToast("Removed from saved");
-      loadSavedPosts();
-    }
-  } catch {
-    showToast("Could not reach server.");
-  }
+    const res = await fetch(`${API_USERS}/save/${postId}`, { method: "PUT", headers: authHeaders() });
+    if (res.ok) { showToast("Removed from saved"); loadSavedPosts(); }
+  } catch { showToast("Could not reach server."); }
 }
+
+function switchTab(name, btn) {
+  document.querySelectorAll(".profile-tab").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+  btn.classList.add("active");
+  const el = document.getElementById("tab-" + name);
+  if (el) el.classList.add("active");
+  if (name === "saved") loadSavedPosts();
+}
+
+// ── INIT ──
+document.addEventListener("DOMContentLoaded", async () => {
+  loadTheme();
+  resetSessionTimer();
+  checkSessionExpiry();
+  await loadProfile();
+  await loadNavAvatar();
+
+  const avatarInput = document.getElementById("avatarInput");
+  if (avatarInput) {
+    avatarInput.addEventListener("change", function() { handleAvatarUpload(this); });
+  }
+});
