@@ -259,13 +259,37 @@ router.get("/explore", async (req, res) => {
     }
 
     // Search by keyword
-    if (search) {
-      query.$or = [
-        { story: { $regex: search, $options: "i" } },
-        { username: { $regex: search, $options: "i" } },
-        { tags: { $regex: search, $options: "i" } }
-      ];
+   if (search) {
+  const searchLower = search.trim().toLowerCase();
+
+  // Map common drink names to their emoji + related keywords
+  const categoryMap = {
+    whiskey:  ["🥃", "whiskey", "scotch", "bourbon", "malt"],
+    beer:     ["🍺", "beer", "ipa", "ale", "lager", "stout", "brew"],
+    wine:     ["🍷", "wine", "merlot", "chardonnay", "rosé", "rose"],
+    cocktail: ["🍹", "cocktail", "mojito", "margarita", "negroni", "gin"],
+    bubbly:   ["🍾", "champagne", "prosecco", "sparkling", "bubbly"]
+  };
+
+  // Find if search term matches a category — get all its related keywords + emoji
+  let expandedTerms = [search];
+  for (const [cat, keywords] of Object.entries(categoryMap)) {
+    if (keywords.some(k => k.toLowerCase() === searchLower) || cat === searchLower) {
+      expandedTerms = [...expandedTerms, ...keywords];
+      break;
     }
+  }
+
+  // Build $or across story, username, tags using all expanded terms
+  const orConditions = [];
+  expandedTerms.forEach(term => {
+    orConditions.push({ story:    { $regex: term, $options: "i" } });
+    orConditions.push({ username: { $regex: term, $options: "i" } });
+    orConditions.push({ tags:     { $regex: term, $options: "i" } });
+  });
+
+  query.$or = orConditions;
+}
 
     const posts = await Post.find(query).sort({ createdAt: -1 });
     res.json(posts);
