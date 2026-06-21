@@ -13,6 +13,7 @@ const {
   searchLimiter,
   aiLimiter} = require("./middleware/rateLimiter");
 const app    = express();
+app.set("trust proxy", 1); 
 const server = http.createServer(app);
 const FRONTEND_URL = process.env.FRONTEND_URL ;
 
@@ -133,12 +134,7 @@ mongoose.connect(MONGO_URI, {
     });
 
     // Keep Render free tier awake (pings every 14 mins)
-    setInterval(() => {
-  fetch(`${process.env.FRONTEND_URL ? `https://drinkedin-ez8u.onrender.com` : `http://localhost:${PORT}`}/api`)
-    .catch(() => {});
+  setInterval(() => {
+  fetch(`${process.env.BACKEND_URL}/api`).catch(() => {});
 }, 14 * 60 * 1000);
-  })
-  .catch(err => {
-    console.error("❌ DB Error:", err.message);
-    process.exit(1);
-  });
+});
