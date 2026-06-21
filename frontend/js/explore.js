@@ -195,6 +195,7 @@ function checkSessionExpiry() {
     window.location.href = "login.html";
   }
 }
+
 // ── STATE ──
 let allPosts = [];
 let currentCategory = "all";
@@ -487,6 +488,7 @@ window.addEventListener("scroll", () => {
 // ── INIT ──
 document.addEventListener("DOMContentLoaded", () => {
   loadTheme();
+  loadNavAvatar();
   resetSessionTimer();
   checkSessionExpiry();
   loadNavAvatar();
