@@ -367,10 +367,10 @@ function filterByTag(tag) {
 }
 
 // ── SEARCH ──
-let searchTimeout;
+let exploreSearchTimeout;
 function handleSearch(value) {
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
+  clearTimeout(exploreSearchTimeout);
+  exploreSearchTimeout = setTimeout(() => {
     currentSearch = value.trim();
     currentCategory = "all";
     currentPage = 1;
