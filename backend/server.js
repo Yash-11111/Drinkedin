@@ -4,7 +4,9 @@ const mongoose  = require("mongoose");
 const cors      = require("cors");
 const path      = require("path");
 const http      = require("http");
+const cron = require("node-cron");
 const { Server } = require("socket.io");
+
 const {
   generalLimiter,
   authLimiter,
@@ -134,7 +136,11 @@ mongoose.connect(MONGO_URI, {
     });
 
     // Keep Render free tier awake (pings every 14 mins)
-  setInterval(() => {
-  fetch(`${process.env.BACKEND_URL}/api`).catch(() => {});
-}, 14 * 60 * 1000);
+  // Keep Render free tier awake — pings every 10 minutes
+cron.schedule("*/10 * * * *", () => {
+  const url = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+  fetch(`${url}/api`)
+    .then(() => console.log("🔄 Keep-alive ping sent"))
+    .catch(err => console.error("Keep-alive ping failed:", err.message));
+});
 });
