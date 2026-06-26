@@ -17,7 +17,9 @@ const authLimiter = rateLimit({
   message:  { msg: "Too many login attempts. Please wait 15 minutes." },
   standardHeaders: true,
   legacyHeaders:   false,
-  keyGenerator: (req) => req.ip
+  keyGenerator: (req) => {
+    console.log("Rate limilet",req.ip);
+     return req.ip}
 });
 
 // ── POST LIMIT ──

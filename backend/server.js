@@ -15,7 +15,7 @@ const {
   searchLimiter,
   aiLimiter} = require("./middleware/rateLimiter");
 const app    = express();
-app.set("trust proxy", 1); 
+app.set("trust proxy", true); 
 const server = http.createServer(app);
 const FRONTEND_URL = process.env.FRONTEND_URL ;
 
