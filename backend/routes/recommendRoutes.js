@@ -15,7 +15,7 @@ router.post("/", auth, async (req, res) => {
         "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model:      "llama-3.3-70b-versatile",
+        model:      "openai/gpt-oss-120b",
         messages,
         temperature: 0.7,
         max_tokens:  1500
